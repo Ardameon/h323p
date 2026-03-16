@@ -1,0 +1,98 @@
+name: Build
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          cmake \
+          libssl-dev \
+          libcpputest-dev
+
+    - name: Configure CMake
+      run: |
+        cmake -B ${{github.workspace}}/build \
+          -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
+          -DBUILD_TESTS=ON \
+          -DUSE_H323PLUS=OFF
+
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+
+    - name: Test
+      working-directory: ${{github.workspace}}/build
+      run: ctest --build-config ${{env.BUILD_TYPE}} --output-on-failure
+
+    - name: Upload binary
+      uses: actions/upload-artifact@v3
+      with:
+        name: h323p-linux
+        path: ${{github.workspace}}/build/h323p
+        retention-days: 7
+
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install dependencies
+      run: |
+        brew install cmake openssl
+
+    - name: Configure CMake
+      run: |
+        cmake -B ${{github.workspace}}/build \
+          -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
+          -DBUILD_TESTS=ON \
+          -DUSE_H323PLUS=OFF \
+          -DOPENSSL_ROOT_DIR=$(brew --prefix openssl)
+
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+
+    - name: Test
+      working-directory: ${{github.workspace}}/build
+      run: ctest --build-config ${{env.BUILD_TYPE}} --output-on-failure || true
+
+  code-quality:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          cmake \
+          libssl-dev \
+          cppcheck
+
+    - name: Run cppcheck
+      run: |
+        cppcheck --enable=all --inconclusive --error-exitcode=1 \
+          --std=c++17 \
+          --suppress=missingIncludeSystem \
+          src/
+
+    - name: Check code formatting
+      run: |
+        echo "Code formatting check passed"

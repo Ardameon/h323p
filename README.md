@@ -1,96 +1,112 @@
 # H.323 Test Utility (h323p)
 
-[![License: MPL 2.0](https://img.shields.io/badge/License-MPL%202.0-brightgreen.svg)](https://opensource.org/licenses/MPL-2.0)
+[![Build Status](https://github.com/Ardameon/h323p/workflows/Build/badge.svg)](https://github.com/Ardameon/h323p/actions)
+[![License: MPL](https://img.shields.io/badge/License-MPL-brightgreen.svg)](https://opensource.org/licenses/MPL-2.0)
+[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/Ardameon/h323p/releases)
 
-**h323p** — утилита для тестирования H.323 вызовов по аналогии с SIPP для SIP.
+**h323p** — H.323 call testing utility similar to SIPP for SIP.
 
-## ✨ Возможности
+## ✨ Features
 
-- 📞 **Нагрузочное тестирование** — до 1000+ одновременных вызовов
-- 🎭 **Fuzzing тестирование** — RTP, H.225, H.245
-- 📹 **Видео поддержка** — H.261, H.263, H.239 презентации
-- 🔒 **TLS шифрование** — защищённая сигнализация
-- 📊 **Статистика и отчёты** — JSON, CSV, HTML
-- 📜 **XML сценарии** — гибкое описание тестов
+- 📞 **Load Testing** — 1000+ simultaneous calls
+- 🎭 **Fuzzing Testing** — RTP, H.225, H.245
+- 📹 **Video Support** — H.261, H.263, H.239 presentations
+- 🔒 **TLS Encryption** — Secure signaling
+- 📊 **Statistics & Reports** — JSON, CSV, HTML
+- 📜 **XML Scenarios** — Flexible test descriptions
 
-## 📚 Документация
+## 🚀 Quick Start
 
-| Документ | Описание |
-|----------|----------|
-| [STAGE1.md](STAGE1.md) | Инфраструктура (CMake, CLI, логи) |
-| [STAGE2.md](STAGE2.md) | H.323 стек (H.225, Call Manager) |
-| [STAGE3.md](STAGE3.md) | H.245 и медиа (RTP, кодеки) |
-| [STAGE4.md](STAGE4.md) | XML сценарии |
-| [STAGE5.md](STAGE5.md) | Нагрузочное тестирование |
-| [STAGE6.md](STAGE6.md) | Fuzzing, видео, H.239, TLS |
-| [STAGE7.md](STAGE7.md) | Документация и релиз |
-| [ARCH_PROJECT.md](ARCH_PROJECT.md) | Полный архитектурный документ |
-| [QWEN.md](QWEN.md) | Краткий контекст проекта |
-
-## 🚀 Быстрый старт
-
-### Зависимости
-
-```bash
-# Ubuntu/Debian
-sudo apt-get install build-essential cmake libssl-dev libpugixml-dev
-
-# H323Plus (требуется сборка из исходников)
-git clone https://github.com/willamowius/h323plus.git
-cd h323plus
-./configure --enable-h235
-make debugnoshared
-export OPENH323DIR=$(pwd)
-```
-
-### Сборка
+### Build
 
 ```bash
 mkdir build && cd build
-cmake .. -DH323PLUS_DIR=$OPENH323DIR
+cmake .. -DH323PLUS_DIR=/path/to/h323plus
 make -j$(nproc)
 ```
 
-### Первый запуск
+### First Run
 
 ```bash
-# Базовый вызов
+# Basic call
 ./h323p call 192.168.1.100
 
-# Нагрузочный тест
+# Load testing
 ./h323p load 192.168.1.100 -c 100 -r 10
 
-# Прослушивание
+# Listen mode
 ./h323p listen
+
+# Information
+./h323p info --version
 ```
 
-## 📋 Команды
+## 📚 Documentation
 
-| Команда | Описание |
-|---------|----------|
-| `call` | Запуск H.323 вызова |
-| `listen` | Режим прослушивания |
-| `load` | Нагрузочное тестирование |
-| `fuzz` | Fuzzing тестирование |
-| `register` | Регистрация на Gatekeeper |
-| `info` | Информация о системе |
+| Document | Description |
+|----------|-------------|
+| [INSTALL.md](INSTALL.md) | Installation instructions |
+| [STAGE1.md](STAGE1.md) | Stage 1: Infrastructure |
+| [ARCH_PROJECT.md](ARCH_PROJECT.md) | Full architecture document |
 
-## 📊 Статус проекта
+## 📋 Commands
 
-**Фаза:** Проектирование завершено (100%)  
-**Версия:** 1.0.0 (ready for implementation)  
-**Готовность к реализации:** ✅
+| Command | Description |
+|---------|-------------|
+| `call` | Initiate an H.323 call |
+| `listen` | Listen mode for incoming calls |
+| `load` | Load testing |
+| `fuzz` | Fuzzing testing |
+| `register` | Register with Gatekeeper |
+| `info` | System information |
 
-## 🔗 Ресурсы
+## 📊 Project Status
 
-- **H323Plus:** https://www.h323plus.org/
-- **callgen323:** https://github.com/willamowius/callgen323
-- **SIPP:** https://github.com/SIPp/sipp
+**Phase:** Stage 1 Implementation (In Progress)
+**Version:** 0.1.0
 
-## 📝 Лицензия
+### Implementation Progress
 
-Распространяется под лицензией [MPL-2.0](LICENSE).
+| Stage | Description | Status |
+|-------|-------------|--------|
+| 1 | Infrastructure (CMake, CLI, logging) | 🔄 In Progress |
+| 2 | H.323 Stack (H.225 RAS/Q.931) | ⏳ Pending |
+| 3 | H.245 and Media (RTP, codecs) | ⏳ Pending |
+| 4 | XML Scenarios | ⏳ Pending |
+| 5 | Load Testing | ⏳ Pending |
+| 6 | Fuzzing and Extensions | ⏳ Pending |
+| 7 | Documentation and Release | ⏳ Pending |
+
+## 🔧 Dependencies
+
+### Required
+- C++17 compiler
+- CMake 3.16+
+- OpenSSL
+
+### Optional (for full functionality)
+- H323Plus + PTLib (Stage 2+)
+- CppUTest (testing)
+- CLI11 (CLI parsing)
+- pugixml (XML parsing)
+
+## 📝 License
+
+Distributed under the [MPL-2.0 License](LICENSE).
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📞 Support
+
+- Issues: https://github.com/Ardameon/h323p/issues
+- Repository: https://github.com/Ardameon/h323p
 
 ---
 
-*Версия: 1.0.0 | Обновлено: 2026-03-16*
+*Version: 0.1.0 | Updated: 2026-03-16*
