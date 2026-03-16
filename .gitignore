@@ -1,0 +1,68 @@
+# Build directory
+build/
+cmake-build-*/
+out/
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Compiled objects
+*.o
+*.so
+*.a
+*.lib
+*.dll
+*.exe
+
+# CMake generated
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+compile_commands.json
+
+# Test artifacts
+Testing/
+TestResults.xml
+coverage/
+*.gcno
+*.gcda
+
+# Documentation generated
+docs/generated/
+doxygen/
+
+# Binary artifacts
+h323p
+*.bin
+*.bin.*
+
+# Password files (security)
+*.creds
+*.password
+.h323p_creds
+
+# PCAP captures
+*.pcap
+*.pcapng
+
+# CDR exports
+*.cdr.csv
+*.cdr.json
