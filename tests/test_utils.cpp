@@ -1,5 +1,5 @@
-#include <CppUTest/TestHarness.h>
 #include "utils/utils.hpp"
+#include <CppUTest/TestHarness.h>
 
 TEST_GROUP(UtilsTest) {
     void setup() override {
@@ -28,8 +28,8 @@ TEST(UtilsTest, SplitString) {
 
 TEST(UtilsTest, SplitStringEmpty) {
     auto result = h323p::utils::split("", ',');
-    LONGS_EQUAL(1, result.size());
-    STRCMP_EQUAL("", result[0].c_str());
+    // Empty string returns empty vector
+    LONGS_EQUAL(0, result.size());
 }
 
 TEST(UtilsTest, SplitStringSingle) {

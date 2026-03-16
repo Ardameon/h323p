@@ -35,7 +35,27 @@ find_package(OpenSSL REQUIRED)
 find_package(CLI11 CONFIG)
 find_package(spdlog CONFIG)
 find_package(pugixml CONFIG)
-find_package(CppUTest CONFIG)
+
+# CppUTest (for tests) - workaround for Ubuntu package bug
+# Ubuntu's libcpputest-dev has broken cmake config, so we find it manually
+if(BUILD_TESTS)
+    find_path(CPPUTEST_INCLUDE_DIR CppUTest/TestHarness.h
+        PATHS /usr/include /usr/local/include)
+    find_library(CPPUTEST_LIBRARY NAMES CppUTest cpputest
+        PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu)
+    
+    if(CPPUTEST_INCLUDE_DIR AND CPPUTEST_LIBRARY)
+        set(CppUTest_FOUND TRUE)
+        add_library(CppUTest::CppUTest STATIC IMPORTED)
+        set_target_properties(CppUTest::CppUTest PROPERTIES
+            IMPORTED_LOCATION ${CPPUTEST_LIBRARY}
+            INTERFACE_INCLUDE_DIRECTORIES ${CPPUTEST_INCLUDE_DIR})
+        message(STATUS "Found CppUTest: ${CPPUTEST_LIBRARY}")
+    else()
+        message(WARNING "CppUTest not found, tests disabled")
+        set(BUILD_TESTS OFF)
+    endif()
+endif()
 
 # ============================================================================
 # Source files
