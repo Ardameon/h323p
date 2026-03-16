@@ -1,87 +1,87 @@
-# Stage 1 Expectations — Infrastructure
+# Ожидаемые результаты Этапа 1 — Инфраструктура
 
-**Stage:** 1 of 7  
-**Title:** Basic Infrastructure  
-**Duration:** 2-3 weeks  
-**Status:** 📋 Ready for implementation
-
----
-
-## 📋 Overview
-
-This document describes the expected outcomes from Stage 1 (Infrastructure) implementation. Upon completion, the project should have a working foundation for all subsequent stages.
+**Этап:** 1 из 7  
+**Название:** Базовая инфраструктура  
+**Длительность:** 2-3 недели  
+**Статус:** 📋 Готов к реализации
 
 ---
 
-## ✅ Expected Results
+## 📋 Обзор
 
-### 1. Project Structure Created
+Этот документ описывает ожидаемые результаты от реализации Этапа 1 (Инфраструктура). После завершения проект должен иметь рабочую основу для всех последующих этапов.
 
-**Expected:**
+---
+
+## ✅ Ожидаемые результаты
+
+### 1. Структура проекта создана
+
+**Ожидаемое:**
 ```
 h323p/
-├── CMakeLists.txt              ✅ Main build configuration
-├── README.md                   ✅ Project overview
-├── LICENSE                     ✅ MPL-2.0 license
-├── .gitignore                  ✅ Git ignore rules
+├── CMakeLists.txt              ✅ Основная сборка
+├── README.md                   ✅ Описание проекта
+├── LICENSE                     ✅ Лицензия MPL-2.0
+├── .gitignore                  ✅ Правила игнорирования Git
 ├── .github/
 │   └── workflows/
-│       └── build.yml           ✅ CI/CD pipeline
+│       └── build.yml           ✅ CI/CD пайплайн
 ├── cmake/
-│   ├── FindH323Plus.cmake      ✅ H323Plus finder module
-│   └── FindPTLib.cmake         ✅ PTLib finder module
+│   ├── FindH323Plus.cmake      ✅ Модуль поиска H323Plus
+│   └── FindPTLib.cmake         ✅ Модуль поиска PTLib
 ├── src/
-│   ├── main.cpp                ✅ Application entry point
+│   ├── main.cpp                ✅ Точка входа
 │   ├── cli/
-│   │   ├── cli_parser.hpp      ✅ CLI parser headers
-│   │   ├── cli_parser.cpp      ✅ CLI parser implementation
-│   │   └── commands.hpp        ✅ Command definitions
+│   │   ├── cli_parser.hpp      ✅ Заголовки CLI парсера
+│   │   ├── cli_parser.cpp      ✅ Реализация CLI парсера
+│   │   └── commands.hpp        ✅ Определения команд
 │   ├── core/
-│   │   ├── call_manager.hpp    ✅ Call Manager stub
+│   │   ├── call_manager.hpp    ✅ Заготовка Call Manager
 │   │   ├── call_manager.cpp
-│   │   ├── call.hpp            ✅ Call class stub
+│   │   ├── call.hpp            ✅ Заготовка Call
 │   │   ├── call.cpp
-│   │   ├── endpoint.hpp        ✅ Endpoint stub
+│   │   ├── endpoint.hpp        ✅ Заготовка Endpoint
 │   │   └── endpoint.cpp
 │   ├── h323/
-│   │   └── (empty for Stage 2)
+│   │   └── (пусто для Этапа 2)
 │   ├── media/
-│   │   └── (empty for Stage 2)
+│   │   └── (пусто для Этапа 2)
 │   ├── scenario/
-│   │   └── (empty for Stage 4)
+│   │   └── (пусто для Этапа 4)
 │   ├── load/
-│   │   └── (empty for Stage 5)
+│   │   └── (пусто для Этапа 5)
 │   ├── fuzz/
-│   │   └── (empty for Stage 6)
+│   │   └── (пусто для Этапа 6)
 │   ├── stats/
-│   │   └── (empty for Stage 5)
+│   │   └── (пусто для Этапа 5)
 │   └── utils/
-│       ├── logging.hpp         ✅ Logging system
+│       ├── logging.hpp         ✅ Система логирования
 │       ├── logging.cpp
-│       ├── timer.hpp           ✅ Timer utilities
+│       ├── timer.hpp           ✅ Утилиты таймеров
 │       ├── timer.cpp
-│       ├── utils.hpp           ✅ String/file utilities
+│       ├── utils.hpp           ✅ Строковые/файловые утилиты
 │       └── utils.cpp
 ├── tests/
-│   ├── CMakeLists.txt          ✅ Test build configuration
-│   ├── test_cli_parser.cpp     ✅ CLI parser tests
-│   ├── test_logging.cpp        ✅ Logging tests
-│   ├── test_timer.cpp          ✅ Timer tests
-│   └── test_utils.cpp          ✅ Utilities tests
+│   ├── CMakeLists.txt          ✅ Сборка тестов
+│   ├── test_cli_parser.cpp     ✅ Тесты CLI парсера
+│   ├── test_logging.cpp        ✅ Тесты логирования
+│   ├── test_timer.cpp          ✅ Тесты таймеров
+│   └── test_utils.cpp          ✅ Тесты утилит
 └── scenarios/
-    └── (empty for Stage 4)
+    └── (пусто для Этапа 4)
 ```
 
-**Acceptance Criteria:**
-- [ ] All directories created
-- [ ] All placeholder files created
-- [ ] File structure matches design
+**Критерии приемки:**
+- [ ] Все директории созданы
+- [ ] Все файлы-заглушки созданы
+- [ ] Структура файлов соответствует дизайну
 
 ---
 
-### 2. CMake Build System Working
+### 2. Система сборки CMake работает
 
-**Expected:**
+**Ожидаемое:**
 ```bash
 $ mkdir build && cd build
 $ cmake .. -DH323PLUS_DIR=/path/to/h323plus
@@ -102,105 +102,105 @@ H.323 Test Utility
 Based on H323Plus + PTLib
 ```
 
-**Acceptance Criteria:**
-- [ ] CMake configuration completes without errors
-- [ ] Project builds successfully with `make`
-- [ ] Executable `h323p` is created
-- [ ] `--version` command works
-- [ ] `--help` command works
+**Критерии приемки:**
+- [ ] Конфигурация CMake завершается без ошибок
+- [ ] Проект успешно собирается через `make`
+- [ ] Исполняемый файл `h323p` создан
+- [ ] Команда `--version` работает
+- [ ] Команда `--help` работает
 
 ---
 
-### 3. CLI Parser Functional
+### 3. CLI парсер функционален
 
-**Expected:**
+**Ожидаемое:**
 ```bash
-# Help output
+# Вывод помощи
 $ ./h323p --help
 
 H.323 Test Utility (h323p) v0.1.0
 
-Usage:
+Использование:
   h323p <command> [options]
 
-Commands:
-  call       Initiate a call
-  listen     Listen mode for incoming calls
-  load       Load testing
-  fuzz       Fuzzing testing
-  register   Register with Gatekeeper
-  info       System information
+Команды:
+  call       Инициирование вызова
+  listen     Режим прослушивания входящих вызовов
+  load       Нагрузочное тестирование
+  fuzz       Fuzzing тестирование
+  register   Регистрация на Gatekeeper
+  info       Информация о системе
 
-Examples:
+Примеры:
   h323p call 192.168.1.100
   h323p load 192.168.1.100 -c 100 -r 10
   h323p listen -m 50
 
-# Unknown command
+# Неизвестная команда
 $ ./h323p unknown
-Error: Unknown command 'unknown'
-Use './h323p --help' for more information.
+Ошибка: Неизвестная команда 'unknown'
+Используйте './h323p --help' для получения информации.
 ```
 
-**Acceptance Criteria:**
-- [ ] `--help` displays usage information
-- [ ] `--version` displays version
-- [ ] Unknown commands show error message
-- [ ] All 6 commands recognized (call, listen, load, fuzz, register, info)
-- [ ] Global options parsed correctly (--log-file, --log-level, --quiet)
+**Критерии приемки:**
+- [ ] `--help` отображает информацию об использовании
+- [ ] `--version` отображает версию
+- [ ] Неизвестные команды показывают сообщение об ошибке
+- [ ] Все 6 команд распознаются (call, listen, load, fuzz, register, info)
+- [ ] Глобальные опции парсятся корректно (--log-file, --log-level, --quiet)
 
 ---
 
-### 4. Logging System Operational
+### 4. Система логирования работает
 
-**Expected:**
+**Ожидаемое:**
 ```bash
-# Console logging (default)
+# Консольное логирование (по умолчанию)
 $ ./h323p call 192.168.1.100
-2026-03-16 10:00:00.123 [INFO] Starting h323p v0.1.0
-2026-03-16 10:00:00.124 [INFO] Command: call
-2026-03-16 10:00:00.125 [INFO] Destination: 192.168.1.100
+2026-03-16 10:00:00.123 [INFO] Запуск h323p v0.1.0
+2026-03-16 10:00:00.124 [INFO] Команда: call
+2026-03-16 10:00:00.125 [INFO] Назначение: 192.168.1.100
 
-# File logging
+# Логирование в файл
 $ ./h323p call 192.168.1.100 --log-file h323p.log --log-level debug
 $ cat h323p.log
-2026-03-16 10:00:00.123 [DEBUG] Initializing logger
-2026-03-16 10:00:00.124 [INFO] Starting h323p v0.1.0
-2026-03-16 10:00:00.125 [DEBUG] CLI parsed successfully
+2026-03-16 10:00:00.123 [DEBUG] Инициализация логгера
+2026-03-16 10:00:00.124 [INFO] Запуск h323p v0.1.0
+2026-03-16 10:00:00.125 [DEBUG] CLI успешно распарсен
 
-# Quiet mode
+# Тихий режим
 $ ./h323p call 192.168.1.100 --quiet
-# (no output)
+# (нет вывода)
 
-# Log levels
+# Уровни логирования
 $ ./h323p call 192.168.1.100 --log-level debug
-2026-03-16 10:00:00.123 [DEBUG] Debug message
-2026-03-16 10:00:00.124 [INFO] Info message
-2026-03-16 10:00:00.125 [WARN] Warning message
-2026-03-16 10:00:00.126 [ERROR] Error message
+2026-03-16 10:00:00.123 [DEBUG] Отладочное сообщение
+2026-03-16 10:00:00.124 [INFO] Информационное сообщение
+2026-03-16 10:00:00.125 [WARN] Предупреждение
+2026-03-16 10:00:00.126 [ERROR] Ошибка
 ```
 
-**Acceptance Criteria:**
-- [ ] Log messages include timestamp, level, and message
-- [ ] Console output works (stdout/stderr)
-- [ ] File output works (--log-file)
-- [ ] Log levels work (debug, info, warn, error)
-- [ ] Quiet mode suppresses output (--quiet)
-- [ ] Async logging implemented (non-blocking)
+**Критерии приемки:**
+- [ ] Сообщения лога включают метку времени, уровень и сообщение
+- [ ] Вывод в консоль работает (stdout/stderr)
+- [ ] Вывод в файл работает (--log-file)
+- [ ] Уровни логирования работают (debug, info, warn, error)
+- [ ] Тихий режим подавляет вывод (--quiet)
+- [ ] Асинхронное логирование реализовано (неблокирующее)
 
 ---
 
-### 5. Timer Utilities Working
+### 5. Утилиты таймеров работают
 
-**Expected:**
+**Ожидаемое:**
 ```cpp
-// ElapsedTimer test
+// Тест ElapsedTimer
 ElapsedTimer timer;
 std::this_thread::sleep_for(std::chrono::milliseconds(100));
 auto elapsed = timer.elapsed();
-assert(elapsed.count() >= 90);  // With tolerance
+assert(elapsed.count() >= 90);  // С допуском
 
-// CountdownTimer test
+// Тест CountdownTimer
 CountdownTimer timer;
 bool callbackCalled = false;
 timer.start(std::chrono::milliseconds(100), [&callbackCalled]() {
@@ -210,19 +210,19 @@ std::this_thread::sleep_for(std::chrono::milliseconds(150));
 assert(callbackCalled == true);
 ```
 
-**Acceptance Criteria:**
-- [ ] `ElapsedTimer` measures elapsed time
-- [ ] `CountdownTimer` triggers callback after duration
-- [ ] Timer stop/reset functions work
-- [ ] Thread-safe timer operations
+**Критерии приемки:**
+- [ ] `ElapsedTimer` измеряет прошедшее время
+- [ ] `CountdownTimer` вызывает callback после истечения времени
+- [ ] Функции остановки/сброса таймера работают
+- [ ] Потокобезопасные операции таймера
 
 ---
 
-### 6. Utility Functions Implemented
+### 6. Утилиты реализованы
 
-**Expected:**
+**Ожидаемое:**
 ```cpp
-// String utilities
+// Строковые утилиты
 utils::trim("  hello  ") == "hello"
 utils::split("a,b,c", ',') == ["a", "b", "c"]
 utils::join(["a", "b", "c"], ",") == "a,b,c"
@@ -231,28 +231,28 @@ utils::toUpper("hello") == "HELLO"
 utils::startsWith("hello world", "hello") == true
 utils::endsWith("hello world", "world") == true
 
-// Address parsing
+// Парсинг адресов
 utils::parseAddress("192.168.1.1:1720") == Address{"192.168.1.1", 1720, "tcp"}
 utils::parseAddress("invalid") == nullopt
 
-// File utilities
+// Файловые утилиты
 utils::fileExists("/etc/passwd") == true
 utils::fileExists("/nonexistent") == false
 utils::writeFile("/tmp/test.txt", "content") == true
 utils::readFile("/tmp/test.txt") == "content"
 ```
 
-**Acceptance Criteria:**
-- [ ] All string utilities implemented
-- [ ] Address parsing works (host:port format)
-- [ ] File utilities work (exists, read, write)
-- [ ] All utility functions tested
+**Критерии приемки:**
+- [ ] Все строковые утилиты реализованы
+- [ ] Парсинг адресов работает (формат host:port)
+- [ ] Файловые утилиты работают (exists, read, write)
+- [ ] Все утилиты протестированы
 
 ---
 
-### 7. Unit Tests Passing
+### 7. Модульные тесты проходят
 
-**Expected:**
+**Ожидаемое:**
 ```bash
 $ ctest --output-on-failure
 Test project /path/to/build
@@ -268,42 +268,42 @@ Test project /path/to/build
 100% tests passed!
 ```
 
-**Acceptance Criteria:**
-- [ ] All unit tests written (CppUTest)
-- [ ] All tests pass (100%)
-- [ ] Test coverage > 80% for Stage 1 code
-- [ ] Tests run with `ctest`
+**Критерии приемки:**
+- [ ] Все модульные тесты написаны (CppUTest)
+- [ ] Все тесты проходят (100%)
+- [ ] Покрытие тестами > 80% для кода Этапа 1
+- [ ] Тесты запускаются через `ctest`
 
 ---
 
-### 8. Integration Tests Working
+### 8. Интеграционные тесты работают
 
-**Expected:**
+**Ожидаемое:**
 ```bash
-# Basic integration test
+# Базовый интеграционный тест
 $ ./h323p_tests -g BasicIntegrationTest
 Tests running in group BasicIntegrationTest:
 ....
 OK (4 tests, 0 failures)
 
-# CLI integration
+# CLI интеграция
 $ ./h323p info --version | grep "h323p version"
 h323p version 0.1.0
 ```
 
-**Acceptance Criteria:**
-- [ ] Integration tests created
-- [ ] CLI commands tested end-to-end
-- [ ] All integration tests pass
+**Критерии приемки:**
+- [ ] Интеграционные тесты созданы
+- [ ] CLI команды протестированы end-to-end
+- [ ] Все интеграционные тесты проходят
 
 ---
 
-### 9. CI/CD Pipeline Configured
+### 9. CI/CD пайплайн настроен
 
-**Expected:**
+**Ожидаемое:**
 ```yaml
 # .github/workflows/build.yml
-name: Build
+name: Сборка
 
 on: [push, pull_request]
 
@@ -312,88 +312,88 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Install dependencies
+      - name: Установка зависимостей
         run: sudo apt-get install -y cmake libssl-dev libcpputest-dev
-      - name: Configure CMake
+      - name: Настройка CMake
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release
-      - name: Build
+      - name: Сборка
         run: cmake --build build
-      - name: Test
+      - name: Тесты
         run: ctest --test-dir build --output-on-failure
 ```
 
-**Acceptance Criteria:**
-- [ ] GitHub Actions workflow created
-- [ ] Build passes on GitHub Actions
-- [ ] Tests run on every push
-- [ ] Build badge in README.md
+**Критерии приемки:**
+- [ ] GitHub Actions workflow создан
+- [ ] Сборка проходит на GitHub Actions
+- [ ] Тесты запускаются при каждом push
+- [ ] Бейдж сборки в README.md
 
 ---
 
-### 10. Graceful Shutdown Implemented
+### 10. Корректное завершение работы реализовано
 
-**Expected:**
+**Ожидаемое:**
 ```bash
-# Start call (will hang without media)
+# Запуск вызова (зависнет без медиа)
 $ ./h323p call 192.168.1.100
-2026-03-16 10:00:00.123 [INFO] Starting h323p v0.1.0
-2026-03-16 10:00:00.124 [INFO] Command: call
-^C2026-03-16 10:00:05.456 [INFO] Shutdown requested...
-2026-03-16 10:00:05.457 [INFO] Cleaning up resources
-2026-03-16 10:00:05.458 [INFO] Goodbye!
+2026-03-16 10:00:00.123 [INFO] Запуск h323p v0.1.0
+2026-03-16 10:00:00.124 [INFO] Команда: call
+^C2026-03-16 10:00:05.456 [INFO] Запрошено завершение работы...
+2026-03-16 10:00:05.457 [INFO] Очистка ресурсов
+2026-03-16 10:00:05.458 [INFO] До свидания!
 ```
 
-**Acceptance Criteria:**
-- [ ] SIGINT (Ctrl+C) handled gracefully
-- [ ] SIGTERM handled gracefully
-- [ ] Resources cleaned up on exit
-- [ ] No memory leaks (valgrind clean)
+**Критерии приемки:**
+- [ ] SIGINT (Ctrl+C) обрабатывается корректно
+- [ ] SIGTERM обрабатывается корректно
+- [ ] Ресурсы очищаются при выходе
+- [ ] Нет утечек памяти (valgrind clean)
 
 ---
 
-## 📊 Summary Checklist
+## 📊 Итоговый чек-лист
 
-### Code Deliverables
+### Результаты по коду
 
-- [ ] `CMakeLists.txt` — Build configuration
-- [ ] `src/main.cpp` — Entry point with graceful shutdown
-- [ ] `src/cli/cli_parser.*` — CLI parser implementation
-- [ ] `src/utils/logging.*` — Async logging system
-- [ ] `src/utils/timer.*` — Timer utilities
-- [ ] `src/utils/utils.*` — String/file utilities
-- [ ] `src/core/*` — Stub files for Stage 2
-- [ ] `tests/*` — Unit and integration tests
+- [ ] `CMakeLists.txt` — Конфигурация сборки
+- [ ] `src/main.cpp` — Точка входа с корректным завершением
+- [ ] `src/cli/cli_parser.*` — Реализация CLI парсера
+- [ ] `src/utils/logging.*` — Асинхронная система логирования
+- [ ] `src/utils/timer.*` — Утилиты таймеров
+- [ ] `src/utils/utils.*` — Строковые/файловые утилиты
+- [ ] `src/core/*` — Файлы-заглушки для Этапа 2
+- [ ] `tests/*` — Модульные и интеграционные тесты
 
-### Documentation Deliverables
+### Результаты по документации
 
-- [ ] `README.md` — Project overview
-- [ ] `INSTALL.md` — Installation instructions
-- [ ] Code comments — All public APIs documented
-- [ ] `CHANGELOG.md` — Initial entry created
+- [ ] `README.md` — Описание проекта
+- [ ] `INSTALL.md` — Инструкция по установке
+- [ ] Комментарии к коду — Все публичные API задокументированы
+- [ ] `CHANGELOG.md` — Начальная запись создана
 
-### Quality Metrics
+### Метрики качества
 
-- [ ] Build passes without warnings (`-Wall -Wextra -Wpedantic`)
-- [ ] All tests pass (100%)
-- [ ] Code coverage > 80%
-- [ ] No memory leaks (valgrind)
-- [ ] CI/CD pipeline green
-
----
-
-## 🚀 Next Steps (Stage 2)
-
-Upon successful completion of Stage 1, proceed to Stage 2:
-
-**Stage 2: H.323 Stack (H.225)**
-- Implement H323Plus wrapper
-- Implement H.225 RAS (Gatekeeper registration)
-- Implement H.225 Q.931 (call signaling)
-- Implement Call Manager
-- Implement `call` and `listen` commands
+- [ ] Сборка проходит без предупреждений (`-Wall -Wextra -Wpedantic`)
+- [ ] Все тесты проходят (100%)
+- [ ] Покрытие тестами > 80%
+- [ ] Нет утечек памяти (valgrind)
+- [ ] CI/CD пайплайн зелёный
 
 ---
 
-*Document Version: 1.0*  
-*Created: 2026-03-16*  
-*Repository: https://github.com/Ardameon/h323p*
+## 🚀 Следующие шаги (Этап 2)
+
+После успешного завершения Этапа 1, перейти к Этапу 2:
+
+**Этап 2: Стек H.323 (H.225)**
+- Реализовать обёртку H323Plus
+- Реализовать H.225 RAS (регистрация на Gatekeeper)
+- Реализовать H.225 Q.931 (сигнализация вызовов)
+- Реализовать Call Manager
+- Реализовать команды `call` и `listen`
+
+---
+
+*Версия документа: 1.0*  
+*Создан: 2026-03-16*  
+*Репозиторий: https://github.com/Ardameon/h323p*
