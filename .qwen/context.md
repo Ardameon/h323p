@@ -5,6 +5,7 @@
 - **Phase:** Design completed (100%)
 - **Version:** 1.0.0 (ready for implementation)
 - **Last updated:** 2026-03-16
+- **Repository:** https://github.com/Ardameon/h323p
 
 ## Description
 
@@ -23,7 +24,7 @@
 | **H.323 Stack** | H323Plus + PTLib |
 | **Build** | CMake |
 | **Scenarios** | XML (SIPP-like) |
-| **Tests** | Google Test |
+| **Tests** | CppUTest |
 
 ### Language Policy
 **IMPORTANT:** All code must use **English only**.
@@ -33,7 +34,7 @@
 | **Code comments** | English | `// Logging`, `// Call Manager` |
 | **String literals** | English | `"Error"`, `"Call completed"` |
 | **Identifiers** | English | `callManager`, `rtpSession` |
-| **CLI output** | English | `"Call completed"`, `"Registration failed"` |
+| **CLI output** | English | `"Starting load test"`, `"Total calls: 100"` |
 | **Documentation** | Russian | Explanations, descriptions |
 
 ---
@@ -63,15 +64,15 @@ h323p/
 
 | File | Description | Lines |
 |------|-------------|-------|
-| `STAGE1.md` | Infrastructure (CMake, CLI, logging) | ~1600 |
-| `STAGE2.md` | H.323 Stack (H.225, Call Manager) | ~2300 |
+| `STAGE1.md` | Infrastructure (CMake, CLI, logging) | ~1700 |
+| `STAGE2.md` | H.323 Stack (H.225, Call Manager) | ~2400 |
 | `STAGE3.md` | H.245 and Media (RTP, codecs) | ~1900 |
 | `STAGE4.md` | XML Scenarios (parser, interpreter) | ~800 |
 | `STAGE5.md` | Load Testing | ~700 |
 | `STAGE6.md` | Fuzzing, Video, H.239, TLS | ~750 |
 | `STAGE7.md` | Documentation and Release | ~650 |
 | `ARCH_PROJECT.md` | Full architectural document | ~1450 |
-| **Total** | | **~10,150 lines** |
+| **Total** | | **~10,350 lines** |
 
 ---
 
@@ -148,6 +149,7 @@ ctest --output-on-failure
 - **H323Plus:** https://www.h323plus.org/
 - **callgen323:** https://github.com/willamowius/callgen323
 - **SIPP:** https://github.com/SIPp/sipp
+- **CppUTest:** https://cpputest.github.io/
 
 ---
 
