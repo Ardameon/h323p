@@ -40,11 +40,14 @@
 |---|--------|--------------|--------|
 | 1.1 | Настройка сборки (CMakeLists.txt) | 2 дня | ⏳ |
 | 1.2 | CLI парсер | 3 дня | ⏳ |
-| 1.3 | Логирование | 2 дня | ⏳ |
+| 1.3 | Логирование (синхронное) | 2 дня | ⏳ |
+| 1.3a | Асинхронное логирование (рек. #6) | 2 дня | ⏳ |
 | 1.4 | Система таймеров | 2 дня | ⏳ |
 | 1.5 | Базовые утилиты | 2 дня | ⏳ |
 | 1.6 | Unit тесты | 2 дня | ⏳ |
-| **Итого** | | **13 дней** | |
+| 1.7 | Интеграционные тесты (рек. #7) | 2 дня | ⏳ |
+| 1.8 | Graceful Shutdown (рек. #12) | 1 день | ⏳ |
+| **Итого** | | **17 дней** | |
 
 ---
 
@@ -1592,6 +1595,205 @@ int main(int argc, char* argv[]) {
 - Корректное завершение активных вызовов
 - Отправка Release сообщений
 - Сохранение статистики и CDR
+- Очистка ресурсов (память, сокеты)
+
+---
+
+## 🔧 Рекомендации для Этапа 1
+
+Следующие рекомендации из RECOMMENDATIONS.md применимы к Этапу 1:
+
+### Рекомендация #6: Асинхронное логирование
+
+**Приоритет:** 🟡 Важный  
+**Сложность:** Средняя
+
+**Проблема:** Синхронное логирование блокирует выполнение на I/O операциях, что критично при высоких нагрузках.
+
+**Решение:**
+```cpp
+// src/utils/async_logger.hpp
+#pragma once
+
+#include "logging.hpp"
+#include <queue>
+#include <thread>
+#include <atomic>
+
+namespace h323p {
+
+class AsyncLogger {
+public:
+    static AsyncLogger& instance();
+    
+    void init(LogLevel level = LogLevel::INFO,
+              const std::string& file = "",
+              size_t queueSize = 1000);
+    
+    void log(LogLevel level, const std::string& msg);
+    void setLevel(LogLevel level);
+    void flush();  // Принудительная запись перед выходом
+    
+private:
+    AsyncLogger();
+    ~AsyncLogger();
+    void writerLoop();
+    
+    struct LogEntry {
+        LogLevel level;
+        std::string msg;
+        std::chrono::steady_clock::time_point time;
+    };
+    
+    std::queue<LogEntry> queue_;
+    std::mutex mutex_;
+    std::condition_variable cv_;
+    std::thread writerThread_;
+    std::atomic<bool> running_{false};
+    size_t maxQueueSize_ = 1000;
+    size_t droppedMessages_ = 0;
+    FILE* file_ = nullptr;
+    LogLevel level_ = LogLevel::INFO;
+};
+
+#define LOG_ASYNC_DEBUG(msg) AsyncLogger::instance().log(LogLevel::DEBUG, msg)
+#define LOG_ASYNC_INFO(msg) AsyncLogger::instance().log(LogLevel::INFO, msg)
+#define LOG_ASYNC_WARN(msg) AsyncLogger::instance().log(LogLevel::WARN, msg)
+#define LOG_ASYNC_ERROR(msg) AsyncLogger::instance().log(LogLevel::ERROR, msg)
+
+} // namespace h323p
+```
+
+**Преимущества:**
+- Не блокирует основной поток выполнения
+- Пакетная запись повышает производительность
+- Поддержка высоких нагрузок (1000+ событий/сек)
+
+**Критерии приемки:**
+- [ ] AsyncLogger реализован
+- [ ] Логирование работает в отдельном потоке
+- [ ] Очередь не переполняется при нормальных условиях
+- [ ] Принудительная запись (flush) работает перед выходом
+
+---
+
+### Рекомендация #7: Интеграционные тесты
+
+**Приоритет:** 🟡 Важный  
+**Сложность:** Средняя
+
+**Проблема:** Модульные тесты не покрывают взаимодействие компонентов.
+
+**Решение:**
+```cpp
+// tests/integration/test_basic.cpp
+#include "CppUTest/TestHarness.h"
+#include "cli/cli_parser.hpp"
+#include "utils/utils.hpp"
+
+TEST_GROUP(BasicIntegrationTest) {
+    void setup() override { }
+    void teardown() override { }
+};
+
+TEST(BasicIntegrationTest, CliParserHelp) {
+    h323p::CliParser parser;
+    std::string help = parser.getHelp();
+    
+    CHECK_FALSE(help.empty());
+    CHECK(help.find("call") != std::string::npos);
+    CHECK(help.find("listen") != std::string::npos);
+}
+
+TEST(BasicIntegrationTest, UtilsParseAddress) {
+    auto addr = h323p::utils::parseAddress("192.168.1.1:1720");
+    
+    CHECK_TRUE(addr.has_value());
+    STRCMP_EQUAL("192.168.1.1", addr->host.c_str());
+    LONGS_EQUAL(1720, addr->port);
+}
+```
+
+**Преимущества:**
+- Раннее обнаружение регрессий
+- Документирование ожидаемого поведения
+- Уверенность при рефакторинге
+
+**Критерии приемки:**
+- [ ] Интеграционные тесты созданы
+- [ ] Тесты покрывают CLI парсер
+- [ ] Тесты покрывают утилиты
+- [ ] Все интеграционные тесты проходят
+
+---
+
+### Рекомендация #12: Graceful Shutdown
+
+**Приоритет:** 🟡 Важный  
+**Сложность:** Низкая
+
+**Проблема:** При Ctrl+C процесс убивается без завершения вызовов и очистки ресурсов.
+
+**Решение:**
+```cpp
+// src/main.cpp
+#include <csignal>
+#include <atomic>
+
+namespace {
+    std::atomic<bool> g_shutdown_requested{false};
+    h323p::CallManager* g_callManager = nullptr;
+}
+
+void signalHandler(int signum) {
+    g_shutdown_requested = true;
+    
+    if (g_callManager && g_callManager->isRunning()) {
+        LOG_INFO("Запрошено завершение работы...");
+        g_callManager->stop();
+    }
+}
+
+int main(int argc, char* argv[]) {
+    // Регистрация обработчиков сигналов
+    std::signal(SIGINT, signalHandler);
+    std::signal(SIGTERM, signalHandler);
+    
+    // ... основной код ...
+    
+    // Ожидание завершения
+    while (!g_shutdown_requested && callManager.isRunning()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+    
+    // Корректное завершение вызовов
+    callManager.stop();
+    
+    return 0;
+}
+```
+
+**Преимущества:**
+- Корректное завершение активных вызовов
+- Отправка Release сообщений
+- Сохранение статистики и CDR
+- Очистка ресурсов (память, сокеты)
+
+**Критерии приемки:**
+- [ ] Обработчик SIGINT реализован
+- [ ] Обработчик SIGTERM реализован
+- [ ] Ресурсы очищаются при выходе
+- [ ] Нет утечек памяти (valgrind clean)
+
+---
+
+## 📊 Матрица рекомендаций для Этапа 1
+
+| № | Рекомендация | Приоритет | Сложность | Статус |
+|---|--------------|-----------|-----------|--------|
+| 6 | Асинхронное логирование | 🟡 Важный | Средняя | ⏳ Ожидает |
+| 7 | Интеграционные тесты | 🟡 Важный | Средняя | ⏳ Ожидает |
+| 12 | Graceful Shutdown | 🟡 Важный | Низкая | ⏳ Ожидает |
 
 ---
 
