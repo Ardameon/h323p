@@ -278,12 +278,12 @@ target_compile_options(h323p PRIVATE
 
 if(BUILD_TESTS)
     enable_testing()
-    find_package(GTest CONFIG)
-    
-    if(GTest_FOUND)
+    find_package(CppUTest CONFIG)
+
+    if(CppUTest_FOUND)
         add_subdirectory(tests)
     else()
-        message(WARNING "GTest not found, tests disabled")
+        message(WARNING "CppUTest not found, tests disabled")
     endif()
 endif()
 
@@ -1094,106 +1094,117 @@ add_executable(h323p_tests
 
 target_link_libraries(h323p_tests PRIVATE
     h323p
-    GTest::gtest
-    GTest::gtest_main
+    CppUTest::CppUTest
+    CppUTest::CppUTestExt
 )
 
-include(GoogleTest)
-gtest_discover_tests(h323p_tests)
+include(CTest)
+enable_testing()
 ```
 
 **Файл: `tests/test_utils.cpp`**
 
 ```cpp
-#include <gtest/gtest.h>
+#include "CppUTest/TestHarness.h"
 #include "utils/utils.hpp"
 
 using namespace h323p;
 
+TEST_GROUP(UtilsTest) {
+    void setup() override { }
+    void teardown() override { }
+};
+
 TEST(UtilsTest, Trim) {
-    EXPECT_EQ(utils::trim("  hello  "), "hello");
-    EXPECT_EQ(utils::trim("test"), "test");
-    EXPECT_EQ(utils::trim("   "), "");
-    EXPECT_EQ(utils::trim("  a b c  "), "a b c");
+    STRCMP_EQUAL("hello", utils::trim("  hello  ").c_str());
+    STRCMP_EQUAL("test", utils::trim("test").c_str());
+    STRCMP_EQUAL("", utils::trim("   ").c_str());
+    STRCMP_EQUAL("a b c", utils::trim("  a b c  ").c_str());
 }
 
 TEST(UtilsTest, Split) {
-    auto parts = utils::split("a,b,c", ',');
-    ASSERT_EQ(parts.size(), 3);
-    EXPECT_EQ(parts[0], "a");
-    EXPECT_EQ(parts[1], "b");
-    EXPECT_EQ(parts[2], "c");
+    std::vector<std::string> parts = utils::split("a,b,c", ',');
+    LONGS_EQUAL(3, parts.size());
+    STRCMP_EQUAL("a", parts[0].c_str());
+    STRCMP_EQUAL("b", parts[1].c_str());
+    STRCMP_EQUAL("c", parts[2].c_str());
 }
 
 TEST(UtilsTest, SplitNoDelimiter) {
-    auto parts = utils::split("abc", ',');
-    ASSERT_EQ(parts.size(), 1);
-    EXPECT_EQ(parts[0], "abc");
+    std::vector<std::string> parts = utils::split("abc", ',');
+    LONGS_EQUAL(1, parts.size());
+    STRCMP_EQUAL("abc", parts[0].c_str());
 }
 
 TEST(UtilsTest, Join) {
-    std::vector<std::string> parts = {"a", "b", "c"};
-    EXPECT_EQ(utils::join(parts, ","), "a,b,c");
-    EXPECT_EQ(utils::join(parts, " - "), "a - b - c");
+    std::vector<std::string> parts;
+    parts.push_back("a");
+    parts.push_back("b");
+    parts.push_back("c");
+    STRCMP_EQUAL("a,b,c", utils::join(parts, ",").c_str());
+    STRCMP_EQUAL("a - b - c", utils::join(parts, " - ").c_str());
 }
 
 TEST(UtilsTest, ToLower) {
-    EXPECT_EQ(utils::toLower("HELLO"), "hello");
-    EXPECT_EQ(utils::toLower("Hello World"), "hello world");
+    STRCMP_EQUAL("hello", utils::toLower("HELLO").c_str());
+    STRCMP_EQUAL("hello world", utils::toLower("Hello World").c_str());
 }
 
 TEST(UtilsTest, ToUpper) {
-    EXPECT_EQ(utils::toUpper("hello"), "HELLO");
-    EXPECT_EQ(utils::toUpper("Hello World"), "HELLO WORLD");
+    STRCMP_EQUAL("HELLO", utils::toUpper("hello").c_str());
+    STRCMP_EQUAL("HELLO WORLD", utils::toUpper("Hello World").c_str());
 }
 
 TEST(UtilsTest, StartsWith) {
-    EXPECT_TRUE(utils::startsWith("hello world", "hello"));
-    EXPECT_FALSE(utils::startsWith("hello", "world"));
+    CHECK(utils::startsWith("hello world", "hello"));
+    CHECK_FALSE(utils::startsWith("hello", "world"));
 }
 
 TEST(UtilsTest, EndsWith) {
-    EXPECT_TRUE(utils::endsWith("hello world", "world"));
-    EXPECT_FALSE(utils::endsWith("hello", "world"));
+    CHECK(utils::endsWith("hello world", "world"));
+    CHECK_FALSE(utils::endsWith("hello", "world"));
 }
 
 TEST(UtilsTest, ParseAddress) {
-    auto addr = utils::parseAddress("192.168.1.1:1720");
-    ASSERT_TRUE(addr.has_value());
-    EXPECT_EQ(addr->host, "192.168.1.1");
-    EXPECT_EQ(addr->port, 1720);
-    EXPECT_EQ(addr->protocol, "tcp");
+    std::optional<utils::Address> addr = utils::parseAddress("192.168.1.1:1720");
+    CHECK_TRUE(addr.has_value());
+    STRCMP_EQUAL("192.168.1.1", addr->host.c_str());
+    LONGS_EQUAL(1720, addr->port);
+    STRCMP_EQUAL("tcp", addr->protocol.c_str());
 }
 
 TEST(UtilsTest, ParseAddressWithProtocol) {
-    auto addr = utils::parseAddress("192.168.1.1:1720/tcp");
-    ASSERT_TRUE(addr.has_value());
-    EXPECT_EQ(addr->host, "192.168.1.1");
-    EXPECT_EQ(addr->port, 1720);
-    EXPECT_EQ(addr->protocol, "tcp");
+    std::optional<utils::Address> addr = utils::parseAddress("192.168.1.1:1720/tcp");
+    CHECK_TRUE(addr.has_value());
+    STRCMP_EQUAL("192.168.1.1", addr->host.c_str());
+    LONGS_EQUAL(1720, addr->port);
+    STRCMP_EQUAL("tcp", addr->protocol.c_str());
 }
 
 TEST(UtilsTest, ParseAddressInvalid) {
-    EXPECT_FALSE(utils::parseAddress("invalid").has_value());
-    EXPECT_FALSE(utils::parseAddress("192.168.1.1").has_value());
-    EXPECT_FALSE(utils::parseAddress(":1720").has_value());
+    CHECK_FALSE(utils::parseAddress("invalid").has_value());
+    CHECK_FALSE(utils::parseAddress("192.168.1.1").has_value());
+    CHECK_FALSE(utils::parseAddress(":1720").has_value());
 }
 
 TEST(UtilsTest, AddressToString) {
-    utils::Address addr{"192.168.1.1", 1720, "tcp"};
-    EXPECT_EQ(addr.toString(), "192.168.1.1:1720");
+    utils::Address addr;
+    addr.host = "192.168.1.1";
+    addr.port = 1720;
+    addr.protocol = "tcp";
+    STRCMP_EQUAL("192.168.1.1:1720", addr.toString().c_str());
 }
 
 TEST(UtilsTest, FileOperations) {
     // Тест fileExists
-    EXPECT_FALSE(utils::fileExists("/nonexistent/file.txt"));
+    CHECK_FALSE(utils::fileExists("/nonexistent/file.txt"));
     
     // Тест writeFile/readFile
     std::string testPath = "/tmp/h323p_test.txt";
     std::string content = "Hello, World!";
-    EXPECT_TRUE(utils::writeFile(testPath, content));
-    EXPECT_TRUE(utils::fileExists(testPath));
-    EXPECT_EQ(utils::readFile(testPath), content);
+    CHECK_TRUE(utils::writeFile(testPath, content));
+    CHECK_TRUE(utils::fileExists(testPath));
+    STRCMP_EQUAL(content.c_str(), utils::readFile(testPath).c_str());
     
     // Очистка
     std::remove(testPath.c_str());
@@ -1203,18 +1214,23 @@ TEST(UtilsTest, FileOperations) {
 **Файл: `tests/test_timer.cpp`**
 
 ```cpp
-#include <gtest/gtest.h>
+#include "CppUTest/TestHarness.h"
 #include "utils/timer.hpp"
 #include <thread>
 
 using namespace h323p;
 
+TEST_GROUP(TimerTest) {
+    void setup() override { }
+    void teardown() override { }
+};
+
 TEST(TimerTest, ElapsedTimer) {
     ElapsedTimer timer;
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     auto elapsed = timer.elapsed();
-    EXPECT_GE(elapsed.count(), 90);  // Небольшой допуск
-    EXPECT_LE(elapsed.count(), 150);
+    CHECK(elapsed.count() >= 90);  // Небольшой допуск
+    CHECK(elapsed.count() <= 150);
 }
 
 TEST(TimerTest, ElapsedTimerReset) {
@@ -1222,113 +1238,118 @@ TEST(TimerTest, ElapsedTimerReset) {
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
     timer.reset();
     auto elapsed = timer.elapsed();
-    EXPECT_LT(elapsed.count(), 10);
+    CHECK(elapsed.count() < 10);
 }
 
 TEST(TimerTest, ElapsedTimerSeconds) {
     ElapsedTimer timer;
     std::this_thread::sleep_for(std::chrono::milliseconds(1500));
     auto seconds = timer.elapsedSeconds();
-    EXPECT_GE(seconds, 1.4);
-    EXPECT_LE(seconds, 2.0);
+    CHECK(seconds >= 1.4);
+    CHECK(seconds <= 2.0);
 }
 
 TEST(TimerTest, CountdownTimer) {
     CountdownTimer timer;
     bool callbackCalled = false;
-    
+
     timer.start(std::chrono::milliseconds(100), [&callbackCalled]() {
         callbackCalled = true;
     });
-    
-    EXPECT_FALSE(timer.isExpired());
-    EXPECT_TRUE(timer.isRunning());
-    
+
+    CHECK_FALSE(timer.isExpired());
+    CHECK_TRUE(timer.isRunning());
+
     std::this_thread::sleep_for(std::chrono::milliseconds(150));
-    EXPECT_TRUE(timer.isExpired());
-    EXPECT_TRUE(callbackCalled);
+    CHECK_TRUE(timer.isExpired());
+    CHECK_TRUE(callbackCalled);
 }
 
 TEST(TimerTest, CountdownTimerStop) {
     CountdownTimer timer;
     bool callbackCalled = false;
-    
+
     timer.start(std::chrono::milliseconds(100), [&callbackCalled]() {
         callbackCalled = true;
     });
-    
+
     timer.stop();
     std::this_thread::sleep_for(std::chrono::milliseconds(150));
-    
-    EXPECT_FALSE(callbackCalled);
-    EXPECT_FALSE(timer.isRunning());
+
+    CHECK_FALSE(callbackCalled);
+    CHECK_FALSE(timer.isRunning());
 }
 
 TEST(TimerTest, CountdownTimerRemaining) {
     CountdownTimer timer;
     timer.start(std::chrono::milliseconds(500));
-    
+
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
-    
+
     auto remaining = timer.remaining();
-    EXPECT_LE(remaining.count(), 350);
-    EXPECT_GE(remaining.count(), 200);
+    CHECK(remaining.count() <= 350);
+    CHECK(remaining.count() >= 200);
 }
 ```
 
 **Файл: `tests/test_logging.cpp`**
 
 ```cpp
-#include <gtest/gtest.h>
+#include "CppUTest/TestHarness.h"
 #include "utils/logging.hpp"
 #include <fstream>
 
 using namespace h323p;
 
+TEST_GROUP(LoggingTest) {
+    void setup() override { }
+    void teardown() override { }
+};
+
 TEST(LoggingTest, LogLevelConversion) {
-    EXPECT_EQ(stringToLogLevel("debug"), LogLevel::DEBUG);
-    EXPECT_EQ(stringToLogLevel("info"), LogLevel::INFO);
-    EXPECT_EQ(stringToLogLevel("warn"), LogLevel::WARN);
-    EXPECT_EQ(stringToLogLevel("error"), LogLevel::ERROR);
-    EXPECT_EQ(stringToLogLevel("unknown"), LogLevel::INFO);
-    
-    EXPECT_EQ(logLevelToString(LogLevel::DEBUG), "DEBUG");
-    EXPECT_EQ(logLevelToString(LogLevel::INFO), "INFO");
-    EXPECT_EQ(logLevelToString(LogLevel::WARN), "WARN");
-    EXPECT_EQ(logLevelToString(LogLevel::ERROR), "ERROR");
+    LONGS_EQUAL((int)LogLevel::DEBUG, (int)stringToLogLevel("debug"));
+    LONGS_EQUAL((int)LogLevel::INFO, (int)stringToLogLevel("info"));
+    LONGS_EQUAL((int)LogLevel::WARN, (int)stringToLogLevel("warn"));
+    LONGS_EQUAL((int)LogLevel::ERROR, (int)stringToLogLevel("error"));
+    LONGS_EQUAL((int)LogLevel::INFO, (int)stringToLogLevel("unknown"));
+
+    STRCMP_EQUAL("DEBUG", logLevelToString(LogLevel::DEBUG).c_str());
+    STRCMP_EQUAL("INFO", logLevelToString(LogLevel::INFO).c_str());
+    STRCMP_EQUAL("WARN", logLevelToString(LogLevel::WARN).c_str());
+    STRCMP_EQUAL("ERROR", logLevelToString(LogLevel::ERROR).c_str());
 }
 
 TEST(LoggingTest, LoggerInstance) {
     auto& logger1 = Logger::instance();
     auto& logger2 = Logger::instance();
-    EXPECT_EQ(&logger1, &logger2);
+    CHECK(&logger1 == &logger2);
 }
 
 TEST(LoggingTest, LoggerSetLevel) {
     auto& logger = Logger::instance();
     logger.setLevel(LogLevel::DEBUG);
-    EXPECT_EQ(logger.getLevel(), LogLevel::DEBUG);
-    
+    LONGS_EQUAL((int)LogLevel::DEBUG, (int)logger.getLevel());
+
     logger.setLevel(LogLevel::ERROR);
-    EXPECT_EQ(logger.getLevel(), LogLevel::ERROR);
+    LONGS_EQUAL((int)LogLevel::ERROR, (int)logger.getLevel());
 }
 
 TEST(LoggingTest, LoggerFileOutput) {
     std::string testLogPath = "/tmp/h323p_test.log";
     auto& logger = Logger::instance();
-    
+
     logger.setLevel(LogLevel::DEBUG);
     logger.init(LogLevel::DEBUG, testLogPath, true);
-    
+
     logger.info("Test message");
-    
+
     // Проверка файла
     std::ifstream file(testLogPath);
     std::string content((std::istreambuf_iterator<char>(file)),
                         std::istreambuf_iterator<char>());
-    
-    EXPECT_NE(content.find("Test message"), std::string::npos);
-    
+
+    CHECK(content.find("Test message") != std::string::npos);
+
     // Очистка
     std::remove(testLogPath.c_str());
 }
@@ -1366,7 +1387,7 @@ jobs:
           build-essential \
           cmake \
           libssl-dev \
-          libgtest-dev \
+          libcpputest-dev \
           libcli11-dev \
           libspdlog-dev \
           libpugixml-dev
@@ -1487,36 +1508,30 @@ private:
 **Решение:**
 ```cpp
 // tests/integration/test_basic.cpp
-#include <gtest/gtest.h>
+#include "CppUTest/TestHarness.h"
 #include "cli/cli_parser.hpp"
 #include "utils/utils.hpp"
 
-class BasicIntegrationTest : public ::testing::Test {
-protected:
-    void SetUp() override {
-        // Настройка тестового окружения
-    }
-    
-    void TearDown() override {
-        // Очистка
-    }
+TEST_GROUP(BasicIntegrationTest) {
+    void setup() override { }
+    void teardown() override { }
 };
 
 TEST_F(BasicIntegrationTest, CliParserHelp) {
     h323p::CliParser parser;
     std::string help = parser.getHelp();
-    
-    EXPECT_FALSE(help.empty());
-    EXPECT_NE(help.find("call"), std::string::npos);
-    EXPECT_NE(help.find("listen"), std::string::npos);
+
+    CHECK_FALSE(help.empty());
+    CHECK(help.find("call") != std::string::npos);
+    CHECK(help.find("listen") != std::string::npos);
 }
 
 TEST_F(BasicIntegrationTest, UtilsParseAddress) {
     auto addr = h323p::utils::parseAddress("192.168.1.1:1720");
-    
-    ASSERT_TRUE(addr.has_value());
-    EXPECT_EQ(addr->host, "192.168.1.1");
-    EXPECT_EQ(addr->port, 1720);
+
+    CHECK_TRUE(addr.has_value());
+    STRCMP_EQUAL("192.168.1.1", addr->host.c_str());
+    LONGS_EQUAL(1720, addr->port);
 }
 ```
 
@@ -1634,10 +1649,13 @@ ctest -R "LoggingTest"
 
 ```bash
 # Тестирование утилит через тесты
-./h323p_tests --gtest_filter="UtilsTest.*"
+./h323p_tests -g UtilsTest
 
 # Ожидаемый результат:
-# [==========] Running 12 tests from 1 test suite.
+# Tests running in group UtilsTest:
+# ....
+# OK (12 tests, 0 failures)
+```
 # [----------] Global test environment set-up.
 # [----------] 12 tests from UtilsTest
 # [ RUN      ] UtilsTest.Trim
@@ -1654,10 +1672,10 @@ ctest -R "LoggingTest"
 - **CMake документация:** https://cmake.org/documentation/
 - **CLI11:** https://github.com/CLIUtils/CLI11
 - **spdlog:** https://github.com/gabime/spdlog
-- **Google Test:** https://google.github.io/googletest/
+- **CppUTest:** https://cpputest.github.io/
 - **H323Plus:** https://www.h323plus.org/
 
 ---
 
-*Версия документа: 0.1.0*  
+*Версия документа: 0.1.0*
 *Последнее обновление: 2026-03-16*

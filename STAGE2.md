@@ -1590,7 +1590,7 @@ int ListenCommand::execute(const CommandConfig& config) {
 **Файл: `tests/test_h323.cpp`**
 
 ```cpp
-#include <gtest/gtest.h>
+#include "CppUTest/TestHarness.h"
 #include "h323/h323_endpoint.hpp"
 #include "h323/q931.hpp"
 #include "h323/ras.hpp"
@@ -1599,92 +1599,97 @@ using namespace h323p;
 
 // Тесты Q931Manager
 
+TEST_GROUP(Q931Test) {
+    void setup() override { }
+    void teardown() override { }
+};
+
 TEST(Q931Test, CreateCallId) {
     Q931Manager manager;
-    
+
     std::string callId = manager.createOutgoingCall("192.168.1.100");
-    
-    EXPECT_FALSE(callId.empty());
-    EXPECT_EQ(manager.getActiveCallCount(), 1);
+
+    CHECK_FALSE(callId.empty());
+    LONGS_EQUAL(1, manager.getActiveCallCount());
 }
 
 TEST(Q931Test, GetCallInfo) {
     Q931Manager manager;
-    
+
     std::string callId = manager.createOutgoingCall("192.168.1.100");
-    
+
     CallInfo* info = manager.getCallInfo(callId);
-    ASSERT_NE(info, nullptr);
-    EXPECT_EQ(info->remoteNumber, "192.168.1.100");
-    EXPECT_EQ(info->isIncoming, false);
+    CHECK(info != nullptr);
+    STRCMP_EQUAL("192.168.1.100", info->remoteNumber.c_str());
+    CHECK_FALSE(info->isIncoming);
 }
 
 TEST(Q931Test, ReleaseCall) {
     Q931Manager manager;
-    
+
     std::string callId = manager.createOutgoingCall("192.168.1.100");
-    EXPECT_EQ(manager.getActiveCallCount(), 1);
-    
+    LONGS_EQUAL(1, manager.getActiveCallCount());
+
     bool result = manager.releaseCall(callId, ReleaseCause::NORMAL_CALL_CLEARING);
-    EXPECT_TRUE(result);
-    EXPECT_EQ(manager.getActiveCallCount(), 0);
+    CHECK_TRUE(result);
+    LONGS_EQUAL(0, manager.getActiveCallCount());
 }
 
 TEST(Q931Test, MultipleCalls) {
     Q931Manager manager;
-    
+
     std::string callId1 = manager.createOutgoingCall("192.168.1.100");
     std::string callId2 = manager.createOutgoingCall("192.168.1.101");
     std::string callId3 = manager.createOutgoingCall("192.168.1.102");
-    
-    EXPECT_EQ(manager.getActiveCallCount(), 3);
-    
+
+    LONGS_EQUAL(3, manager.getActiveCallCount());
+
     manager.releaseCall(callId2, ReleaseCause::NORMAL_CALL_CLEARING);
-    EXPECT_EQ(manager.getActiveCallCount(), 2);
+    LONGS_EQUAL(2, manager.getActiveCallCount());
 }
 
 // Тесты GatekeeperManager
 
 TEST(GatekeeperTest, Config) {
     GatekeeperManager manager;
-    
+
     GatekeeperConfig config;
     config.address = "192.168.1.1";
     config.port = 1719;
     config.username = "test";
     config.ttl = 600;
-    
+
     manager.setConfig(config);
-    
+
     const auto& retrievedConfig = manager.getConfig();
-    EXPECT_EQ(retrievedConfig.address, "192.168.1.1");
-    EXPECT_EQ(retrievedConfig.port, 1719);
-    EXPECT_EQ(retrievedConfig.username, "test");
+    STRCMP_EQUAL("192.168.1.1", retrievedConfig.address.c_str());
+    LONGS_EQUAL(1719, retrievedConfig.port);
+    STRCMP_EQUAL("test", retrievedConfig.username.c_str());
 }
 
 TEST(GatekeeperTest, Status) {
     GatekeeperManager manager;
-    
-    EXPECT_EQ(manager.getStatus(), RegistrationStatus::NOT_REGISTERED);
-    EXPECT_FALSE(manager.isRegistered());
+
+    LONGS_EQUAL((int)RegistrationStatus::NOT_REGISTERED, (int)manager.getStatus());
+    CHECK_FALSE(manager.isRegistered());
 }
 
 // Тесты CallState conversion
 
 TEST(CallStateTest, StateToString) {
-    EXPECT_EQ(callStateToString(CallState::NULL_STATE), "NULL");
-    EXPECT_EQ(callStateToString(CallState::CALL_INITIATED), "INITIATED");
-    EXPECT_EQ(callStateToString(CallState::CALL_ACTIVE), "ACTIVE");
-    EXPECT_EQ(callStateToString(CallState::RELEASE_COMPLETE), "RELEASED");
+    STRCMP_EQUAL("NULL", callStateToString(CallState::NULL_STATE).c_str());
+    STRCMP_EQUAL("INITIATED", callStateToString(CallState::CALL_INITIATED).c_str());
+    STRCMP_EQUAL("ACTIVE", callStateToString(CallState::CALL_ACTIVE).c_str());
+    STRCMP_EQUAL("RELEASED", callStateToString(CallState::RELEASE_COMPLETE).c_str());
 }
 
 TEST(CallStateTest, CauseToString) {
-    EXPECT_EQ(releaseCauseToString(ReleaseCause::NORMAL_CALL_CLEARING), 
-              "Normal Call Clearing (16)");
-    EXPECT_EQ(releaseCauseToString(ReleaseCause::USER_BUSY), 
-              "User Busy (17)");
-    EXPECT_EQ(releaseCauseToString(ReleaseCause::CALL_REJECTED), 
-              "Call Rejected (21)");
+    STRCMP_EQUAL("Normal Call Clearing (16)", 
+                 releaseCauseToString(ReleaseCause::NORMAL_CALL_CLEARING).c_str());
+    STRCMP_EQUAL("User Busy (17)", 
+                 releaseCauseToString(ReleaseCause::USER_BUSY).c_str());
+    STRCMP_EQUAL("Call Rejected (21)", 
+                 releaseCauseToString(ReleaseCause::CALL_REJECTED).c_str());
 }
 ```
 

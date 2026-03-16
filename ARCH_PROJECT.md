@@ -30,7 +30,7 @@
 | **H.323 стек** | H323Plus + PTLib | Единственная активная open-source реализация |
 | **Сценарии** | XML | SIPP-подобный синтаксис, знакомый пользователям |
 | **Сборка** | CMake | Кроссплатформенность |
-| **Тесты** | Google Test / Catch2 | Популярность, возможности |
+| **Тесты** | CppUTest | Популярность, возможности |
 
 ---
 
@@ -991,7 +991,7 @@ h323p call -s scenarios/custom.xml --cdr calls.csv -t 2
 | **1.3** Логирование | spdlog или собственная реализация | 2 дня |
 | **1.4** Система таймеров | Таймеры для пауз и таймаутов | 2 дня |
 | **1.5** Базовые утилиты | Строковые функции, парсинг адресов | 2 дня |
-| **1.6** Unit тесты | Настройка Catch2 или Google Test | 2 дня |
+| **1.6** Unit тесты | Настройка CppUTest | 2 дня |
 
 **Результат этапа:**
 ```
@@ -1343,9 +1343,7 @@ find_package(OpenSSL REQUIRED)      # TLS, шифрование
 find_package(pugixml REQUIRED)      # XML парсинг
 find_package(CLI11 REQUIRED)        # CLI парсер
 find_package(spdlog REQUIRED)       # Логирование
-
-# Тесты
-find_package(GTest REQUIRED)
+find_package(CppUTest REQUIRED)     # Тесты
 ```
 
 ---
