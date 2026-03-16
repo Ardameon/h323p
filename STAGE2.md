@@ -2319,25 +2319,25 @@ ctest -R "CallStateTest" --output-on-failure
 ```
 $ ./h323p call 192.168.1.100
 
-2026-03-16 10:00:00.123 [INFO] Запуск h323p v0.1.0
-2026-03-16 10:00:00.124 [INFO] Команда: call
-2026-03-16 10:00:00.125 [INFO] Инициализация H323Endpoint: 0.0.0.0:1720
-2026-03-16 10:00:00.126 [INFO] H323Endpoint инициализирован
-2026-03-16 10:00:00.127 [INFO] Исходящий вызов: 192.168.1.100
-2026-03-16 10:00:00.128 [INFO] Вызов создан: h323p-abc-1
+2026-03-16 10:00:00.123 [INFO] Starting h323p v0.1.0
+2026-03-16 10:00:00.124 [INFO] Command: call
+2026-03-16 10:00:00.125 [INFO] Initializing H323Endpoint: 0.0.0.0:1720
+2026-03-16 10:00:00.126 [INFO] H323Endpoint initialized
+2026-03-16 10:00:00.127 [INFO] Outgoing call: 192.168.1.100
+2026-03-16 10:00:00.128 [INFO] Call created: h323p-abc-1
 2026-03-16 10:00:00.129 [INFO] Call h323p-abc-1: NULL -> INITIATED
 2026-03-16 10:00:00.230 [INFO] Call h323p-abc-1: INITIATED -> PROCEEDING
 2026-03-16 10:00:00.331 [INFO] Call h323p-abc-1: PROCEEDING -> ALERTING
 2026-03-16 10:00:00.432 [INFO] Call h323p-abc-1: ALERTING -> ACTIVE
-2026-03-16 10:00:00.433 [INFO] Длительность вызова: 15 сек
-2026-03-16 10:00:15.434 [INFO] Завершение вызова: h323p-abc-1 (cause=16)
+2026-03-16 10:00:00.433 [INFO] Call duration: 15 sec
+2026-03-16 10:00:15.434 [INFO] Releasing call: h323p-abc-1 (cause=16)
 2026-03-16 10:00:15.435 [INFO] Call h323p-abc-1: ACTIVE -> RELEASED
 
-Статистика:
-  Всего вызовов: 1
-  Успешных: 1
-  Неудачных: 0
-  Средняя длительность: 15 сек
+Statistics:
+  Total calls: 1
+  Successful: 1
+  Failed: 0
+  Average duration: 15 sec
 ```
 
 ---

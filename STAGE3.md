@@ -1883,22 +1883,22 @@ ctest -R "H245Test" --output-on-failure
 ### Пример вывода
 
 ```
-2026-03-16 10:00:00.123 [INFO] Вызов установлен: h323p-abc-1
-2026-03-16 10:00:00.124 [INFO] Запуск H.245 сессии
-2026-03-16 10:00:00.125 [INFO] Отправка Master/Slave Determination
-2026-03-16 10:00:00.226 [INFO] Результат: мы - MASTER
-2026-03-16 10:00:00.227 [INFO] Отправка Terminal Capability Set
+2026-03-16 10:00:00.123 [INFO] Call established: h323p-abc-1
+2026-03-16 10:00:00.124 [INFO] Starting H.245 session
+2026-03-16 10:00:00.125 [INFO] Sending Master/Slave Determination
+2026-03-16 10:00:00.226 [INFO] Result: we are MASTER
+2026-03-16 10:00:00.227 [INFO] Sending Terminal Capability Set
 2026-03-16 10:00:00.328 [INFO] Capabilities exchanged
-2026-03-16 10:00:00.329 [INFO] Открытие логического канала 1: audio G.711 μ-law
-2026-03-16 10:00:00.330 [INFO] RTP сессия: 0.0.0.0:10000 -> 192.168.1.100:20000
-2026-03-16 10:00:00.331 [INFO] Медиа запущена
-2026-03-16 10:00:00.332 [INFO] Отправка аудио (G.711, 64 kbps)
+2026-03-16 10:00:00.329 [INFO] Opening logical channel 1: audio G.711 μ-law
+2026-03-16 10:00:00.330 [INFO] RTP session: 0.0.0.0:10000 -> 192.168.1.100:20000
+2026-03-16 10:00:00.331 [INFO] Media started
+2026-03-16 10:00:00.332 [INFO] Sending audio (G.711, 64 kbps)
 ...
-2026-03-16 10:00:30.333 [INFO] Статистика вызова:
-  Длительность: 30.0 сек
-  RTP пакетов отправлено: 1500
-  RTP пакетов получено: 1498
-  Jitter: 2.5 мс
+2026-03-16 10:00:30.333 [INFO] Call statistics:
+  Duration: 30.0 sec
+  RTP packets sent: 1500
+  RTP packets received: 1498
+  Jitter: 2.5 ms
 ```
 
 ---

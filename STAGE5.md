@@ -1248,26 +1248,26 @@ make -j$(nproc)
 ```
 $ ./h323p load 192.168.1.100 -c 100 -r 10
 
-2026-03-16 10:00:00.123 [INFO] Запуск нагрузочного теста
-2026-03-16 10:00:00.124 [INFO]   Всего вызовов: 100
-2026-03-16 10:00:00.125 [INFO]   Макс. одновременных: 50
-2026-03-16 10:00:00.126 [INFO]   Скорость: 10.0 вызовов/сек
+2026-03-16 10:00:00.123 [INFO] Starting load test
+2026-03-16 10:00:00.124 [INFO]   Total calls: 100
+2026-03-16 10:00:00.125 [INFO]   Max concurrent: 50
+2026-03-16 10:00:00.126 [INFO]   Rate: 10.0 calls/sec
 
 [00:05] Calls: 50/100 | Active: 45 | Success: 48 (96.0%) | Fail: 2 (4.0%) | Rate: 9.6/s
 [00:10] Calls: 100/100 | Active: 30 | Success: 68 (97.1%) | Fail: 2 (2.9%) | Rate: 9.8/s
 [00:15] Calls: 100/100 | Active: 0 | Success: 98 (98.0%) | Fail: 2 (2.0%) | Rate: 9.9/s
 
-2026-03-16 10:00:15.456 [INFO] Тест завершён
+2026-03-16 10:00:15.456 [INFO] Test completed
 
-=== Статистика ===
-Всего вызовов:     100
-Успешных:         98 (98.0%)
-Неудачных:        2 (2.0%)
-Длительность:     15.3 сек
-Средняя скорость: 9.9 вызовов/сек
+=== Statistics ===
+Total calls:      100
+Successful:       98 (98.0%)
+Failed:           2 (2.0%)
+Duration:         15.3 sec
+Average rate:     9.9 calls/sec
 
-Отчёт сохранён: report.json
-CDR сохранён: calls.csv
+Report saved: report.json
+CDR saved: calls.csv
 ```
 
 ### Пример JSON отчёта
