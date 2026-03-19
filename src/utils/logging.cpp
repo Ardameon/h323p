@@ -26,8 +26,13 @@ void Logger::init(LogLevel level, const std::string& file, bool quiet) {
     if (!file.empty()) {
         if (file_) {
             fclose(file_);
+            file_ = nullptr;
         }
         file_ = fopen(file.c_str(), "a");
+        if (!file_) {
+            // Fallback: print error to stderr
+            fprintf(stderr, "Failed to open log file: %s (errno=%d)\n", file.c_str(), errno);
+        }
     }
 }
 

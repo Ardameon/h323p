@@ -9,6 +9,9 @@
 #include "utils/logging.hpp"
 #include "utils/utils.hpp"
 
+using h323p::LogLevel;
+using h323p::stringToLogLevel;
+
 // Global shutdown flag
 std::atomic<bool> g_shutdown_requested{false};
 
@@ -138,29 +141,28 @@ int main(int argc, char* argv[]) {
         return parser.getError().empty() ? 0 : 1;
     }
 
-    // Initialize logger
-    h323p::Logger::instance().init(
-        h323p::LogLevel::INFO,
-        "",
-        false
-    );
+    // Determine log level and file from config
+    LogLevel logLevel = LogLevel::INFO;
+    std::string logFile = config.logFile;
+    bool quiet = config.quiet;
+
+    // Override log level if specified
+    if (!config.logLevel.empty()) {
+        logLevel = stringToLogLevel(config.logLevel);
+    }
+
+    // Override quiet/verbose
+    if (config.verbose) {
+        logLevel = LogLevel::DEBUG;
+    }
+    if (config.quiet) {
+        logLevel = LogLevel::NONE;
+    }
+
+    // Initialize logger once with proper configuration
+    h323p::Logger::instance().init(logLevel, logFile, quiet);
 
     LOG_INFO("Starting h323p v" + std::string(PROJECT_VERSION));
-
-    // Apply global options
-    if (!config.logFile.empty()) {
-        h323p::Logger::instance().init(
-            h323p::stringToLogLevel(config.logLevel),
-            config.logFile,
-            config.quiet
-        );
-    }
-
-    if (config.quiet) {
-        h323p::Logger::instance().setLevel(h323p::LogLevel::NONE);
-    } else if (config.verbose) {
-        h323p::Logger::instance().setLevel(h323p::LogLevel::DEBUG);
-    }
 
     // Execute command
     int result = 0;

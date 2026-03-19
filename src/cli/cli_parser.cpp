@@ -35,7 +35,18 @@ void CliParser::parseGlobalOptions(int argc, char* argv[], CommandConfig& config
 
 void CliParser::parseCommandOptions(int argc, char* argv[], CommandConfig& config, int startIdx) {
     for (int j = startIdx; j < argc; j++) {
-        if (strcmp(argv[j], "--scenario") == 0 || strcmp(argv[j], "-s") == 0) {
+        // Also check for global options in command-specific parsing
+        if (strcmp(argv[j], "--log-file") == 0 && j + 1 < argc) {
+            config.logFile = argv[++j];
+        } else if (strcmp(argv[j], "--log-level") == 0 && j + 1 < argc) {
+            config.logLevel = argv[++j];
+        } else if (strcmp(argv[j], "--quiet") == 0 || strcmp(argv[j], "-q") == 0) {
+            config.quiet = true;
+        } else if (strcmp(argv[j], "--verbose") == 0 || strcmp(argv[j], "-v") == 0) {
+            config.verbose = true;
+        } else if (strcmp(argv[j], "--config") == 0 && j + 1 < argc) {
+            config.configFile = argv[++j];
+        } else if (strcmp(argv[j], "--scenario") == 0 || strcmp(argv[j], "-s") == 0) {
             if (j + 1 < argc) config.scenario = argv[++j];
         } else if (strcmp(argv[j], "--gatekeeper") == 0 || strcmp(argv[j], "-g") == 0) {
             if (j + 1 < argc) config.gatekeeper = argv[++j];
