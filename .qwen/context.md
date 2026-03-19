@@ -2,9 +2,9 @@
 
 ## Project Status
 
-- **Phase:** Stage 1 Completed ✅
-- **Version:** 0.1.0
-- **Last updated:** 2026-03-16
+- **Phase:** Stage 2 Documentation Completed ✅
+- **Version:** 0.2.0
+- **Last updated:** 2026-03-19
 - **Repository:** https://github.com/Ardameon/h323p
 
 ## Description
@@ -65,14 +65,14 @@ h323p/
 | File | Description | Lines |
 |------|-------------|-------|
 | `STAGE1.md` | Infrastructure (CMake, CLI, logging) | ~1700 |
-| `STAGE2.md` | H.323 Stack (H.225, Call Manager) | ~2400 |
+| `STAGE2.md` | H.323 Stack (H.225, Call Manager) | ~3140 |
 | `STAGE3.md` | H.245 and Media (RTP, codecs) | ~1900 |
 | `STAGE4.md` | XML Scenarios (parser, interpreter) | ~800 |
 | `STAGE5.md` | Load Testing | ~700 |
 | `STAGE6.md` | Fuzzing, Video, H.239, TLS | ~750 |
 | `STAGE7.md` | Documentation and Release | ~650 |
 | `ARCH_PROJECT.md` | Full architectural document | ~1450 |
-| **Total** | | **~10,350 lines** |
+| **Total** | | **~11,090 lines** |
 
 ---
 
@@ -113,7 +113,7 @@ h323p/
 | Stage | Duration | Status |
 |-------|----------|--------|
 | 1. Infrastructure | 2-3 weeks | ✅ **Completed** |
-| 2. H.323 Stack (H.225) | 3-4 weeks | ⏳ Pending |
+| 2. H.323 Stack (H.225) | 3-4 weeks | 📋 **Documentation Ready** |
 | 3. H.245 and Media | 2-3 weeks | ⏳ Pending |
 | 4. XML Scenarios | 2 weeks | ⏳ Pending |
 | 5. Load Testing | 2 weeks | ⏳ Pending |
@@ -161,6 +161,15 @@ ctest --output-on-failure
 - [x] Graceful Shutdown handler (SIGINT/SIGTERM)
 - [x] CI/CD workflow (GitHub Actions)
 
+## 📝 Stage 2 Documentation Completed
+
+- [x] STAGE2.md expanded with 4 new subsections (+778 lines)
+- [x] 2.1.1 Async H323Plus Events (H323EventHandler class)
+- [x] 2.2.1 Operation Timeouts (H323TimeoutConfig, executeWithTimeout)
+- [x] 2.2.2 Retry Logic with Exponential Backoff (RetryConfig, retryWithBackoff)
+- [x] 2.3.1 Q.931 Information Elements Logging (Q931Logger class)
+- [x] Updated completion checklist (13 criteria)
+
 ---
 
 ## Resources
@@ -184,4 +193,4 @@ ctest --output-on-failure
 
 ---
 
-*Version: 0.1.0 | Updated: 2026-03-16*
+*Version: 0.2.0 | Updated: 2026-03-19*
