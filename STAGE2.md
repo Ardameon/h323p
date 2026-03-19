@@ -517,6 +517,218 @@ void H323Endpoint::onGatekeeperRegistered(bool success) {
 
 ---
 
+### 2.1.1 Асинхронные события H323Plus
+
+**Проблема:** H323Plus использует callback-и для событий, которые нужно корректно обрабатывать.
+
+**Решение:** Создать класс обработчика событий, наследуемый от `H323Listener`.
+
+**Файл: `src/h323/h323_event_handler.hpp`**
+
+```cpp
+#pragma once
+
+#include <h323.h>
+#include <h323con.h>
+#include <functional>
+#include <string>
+
+namespace h323p {
+
+// Типы событий для callback
+enum class H323ListenerEvent {
+    NEW_INCOMING_CONNECTION,
+    CONNECTION_STATE_CHANGED,
+    CONNECTION_CLEARING,
+    CONNECTION_ESTABLISHED,
+    CONNECTION_FAILED
+};
+
+// Данные события
+struct ListenerEventData {
+    H323ListenerEvent type;
+    H323Connection* connection = nullptr;
+    std::string callId;
+    std::string remoteAddress;
+    std::string remoteNumber;
+    H323Connection::CallStates newState = H323Connection::CallStates::Null;
+    H323Connection::CallStates oldState = H323Connection::CallStates::Null;
+    H323Connection::ClearingReasons clearReason = H323Connection::ClearingReasons::Normal;
+};
+
+// Callback тип
+using H323ListenerCallback = std::function<void(const ListenerEventData&)>;
+
+// Обработчик событий H323Plus
+class H323EventHandler : public H323Listener {
+public:
+    explicit H323EventHandler(H323ListenerCallback callback);
+    ~H323EventHandler() override = default;
+
+    // Переопределение методов H323Listener
+    void OnNewIncomingConnection(H323Connection* connection) override;
+    
+    void OnConnectionForwarded(H323Connection* connection,
+                               const PString& forwardedParty) override;
+    
+    void OnConnectionHold(H323Connection* connection, bool onHold) override;
+    
+    void OnConnectionState(H323Connection* connection,
+                           H323Connection::CallStates newState,
+                           H323Connection::CallStates oldValue) override;
+    
+    void OnConnectionClearing(H323Connection* connection,
+                              H323Connection::ClearingReasons reason) override;
+
+private:
+    std::string getConnectionId(H323Connection* connection);
+    std::string getRemoteAddress(H323Connection* connection);
+    std::string getRemoteNumber(H323Connection* connection);
+
+    H323ListenerCallback callback_;
+};
+
+} // namespace h323p
+```
+
+**Файл: `src/h323/h323_event_handler.cpp`**
+
+```cpp
+#include "h323_event_handler.hpp"
+#include "utils/logging.hpp"
+#include <sstream>
+
+namespace h323p {
+
+H323EventHandler::H323EventHandler(H323ListenerCallback callback)
+    : callback_(callback) {
+}
+
+std::string H323EventHandler::getConnectionId(H323Connection* connection) {
+    std::ostringstream oss;
+    oss << "h323p-" << (const char*)connection->GetCallReference();
+    return oss.str();
+}
+
+std::string H323EventHandler::getRemoteAddress(H323Connection* connection) {
+    return (const char*)connection->GetRemoteAddress();
+}
+
+std::string H323EventHandler::getRemoteNumber(H323Connection* connection) {
+    auto alias = connection->GetRemotePartyNumber();
+    return alias.IsEmpty() ? "unknown" : (const char*)alias;
+}
+
+void H323EventHandler::OnNewIncomingConnection(H323Connection* connection) {
+    LOG_INFO_FMT("Входящий вызов: %s от %s",
+                 getConnectionId(connection).c_str(),
+                 getRemoteAddress(connection).c_str());
+
+    ListenerEventData data;
+    data.type = H323ListenerEvent::NEW_INCOMING_CONNECTION;
+    data.connection = connection;
+    data.callId = getConnectionId(connection);
+    data.remoteAddress = getRemoteAddress(connection);
+    data.remoteNumber = getRemoteNumber(connection);
+
+    if (callback_) callback_(data);
+}
+
+void H323EventHandler::OnConnectionState(H323Connection* connection,
+                                          H323Connection::CallStates newState,
+                                          H323Connection::CallStates oldValue) {
+    std::string callId = getConnectionId(connection);
+    
+    LOG_DEBUG_FMT("Call %s: state %d -> %d",
+                  callId.c_str(), (int)oldValue, (int)newState);
+
+    ListenerEventData data;
+    data.type = H323ListenerEvent::CONNECTION_STATE_CHANGED;
+    data.connection = connection;
+    data.callId = callId;
+    data.newState = newState;
+    data.oldState = oldValue;
+
+    if (callback_) callback_(data);
+}
+
+void H323EventHandler::OnConnectionClearing(H323Connection* connection,
+                                             H323Connection::ClearingReasons reason) {
+    std::string callId = getConnectionId(connection);
+    
+    LOG_INFO_FMT("Вызов %s завершается: reason=%d", callId.c_str(), (int)reason);
+
+    ListenerEventData data;
+    data.type = H323ListenerEvent::CONNECTION_CLEARING;
+    data.connection = connection;
+    data.callId = callId;
+    data.clearReason = reason;
+
+    if (callback_) callback_(data);
+}
+
+void H323EventHandler::OnConnectionForwarded(H323Connection* connection,
+                                              const PString& forwardedParty) {
+    LOG_DEBUG_FMT("Вызов переадресован на %s", (const char*)forwardedParty);
+}
+
+void H323EventHandler::OnConnectionHold(H323Connection* connection, bool onHold) {
+    LOG_DEBUG_FMT("Вызов %s: hold=%d", getConnectionId(connection).c_str(), onHold);
+}
+
+} // namespace h323p
+```
+
+**Интеграция с H323Endpoint:**
+
+```cpp
+// В h323_endpoint.hpp
+#include "h323_event_handler.hpp"
+
+class H323Endpoint {
+    // ...
+    std::unique_ptr<H323EventHandler> eventHandler_;
+    // ...
+};
+
+// В h323_endpoint.cpp
+bool H323Endpoint::initialize(const H323Config& config) {
+    // ...
+    
+    // Создание обработчика событий
+    eventHandler_ = std::make_unique<H323EventHandler>(
+        [this](const ListenerEventData& data) {
+            onListenerEvent(data);
+        }
+    );
+    
+    // Регистрация обработчика в endpoint
+    endpoint_->SetListener(eventHandler_.get());
+    
+    // ...
+}
+
+void H323Endpoint::onListenerEvent(const ListenerEventData& data) {
+    switch (data.type) {
+        case H323ListenerEvent::NEW_INCOMING_CONNECTION:
+            onIncomingCall(data.connection);
+            break;
+        case H323ListenerEvent::CONNECTION_STATE_CHANGED:
+            if (data.newState == H323Connection::ConnectedState) {
+                onCallEstablished(data.connection);
+            }
+            break;
+        case H323ListenerEvent::CONNECTION_CLEARING:
+            onCallCleared(data.connection);
+            break;
+        default:
+            break;
+    }
+}
+```
+
+---
+
 ### 2.2 H.225 RAS
 
 **Файл: `src/h323/ras.hpp`**
@@ -710,6 +922,292 @@ bool GatekeeperManager::unregisterFromGatekeeper() {
 }
 
 } // namespace h323p
+```
+
+---
+
+### 2.2.1 Таймауты на операции
+
+**Проблема:** Регистрация на Gatekeeper или создание вызова могут зависнуть без таймаута.
+
+**Решение:** Добавить конфигурацию таймаутов и функцию выполнения операций с ограничением по времени.
+
+**Файл: `src/h323/h323_timeout.hpp`**
+
+```cpp
+#pragma once
+
+#include <chrono>
+#include <future>
+#include <functional>
+#include <stdexcept>
+
+namespace h323p {
+
+// Конфигурация таймаутов
+struct H323TimeoutConfig {
+    std::chrono::seconds gatekeeperRegistration = 30;
+    std::chrono::seconds gatekeeperDiscovery = 10;
+    std::chrono::seconds callSetup = 60;
+    std::chrono::seconds callRelease = 10;
+    std::chrono::seconds rasResponse = 5;
+    std::chrono::seconds h245Response = 15;
+};
+
+// Исключение таймаута
+class TimeoutException : public std::runtime_error {
+public:
+    explicit TimeoutException(const std::string& operation)
+        : std::runtime_error("Operation '" + operation + "' timed out") {
+    }
+};
+
+// Выполнение функции с таймаутом
+template<typename Func, typename Rep, typename Period>
+auto executeWithTimeout(Func&& func, 
+                       const std::chrono::duration<Rep, Period>& timeout,
+                       const std::string& operation = "unnamed")
+    -> decltype(func()) 
+{
+    auto future = std::async(std::launch::async, func);
+    
+    if (future.wait_for(timeout) == std::future_status::ready) {
+        return future.get();
+    }
+    
+    throw TimeoutException(operation);
+}
+
+// Попытка выполнения с таймаутом (возвращает false вместо исключения)
+template<typename Func, typename Rep, typename Period>
+bool tryExecuteWithTimeout(Func&& func,
+                           const std::chrono::duration<Rep, Period>& timeout,
+                           const std::string& operation = "unnamed")
+{
+    try {
+        executeWithTimeout(std::forward<Func>(func), timeout, operation);
+        return true;
+    } catch (const TimeoutException&) {
+        return false;
+    }
+}
+
+} // namespace h323p
+```
+
+**Пример использования:**
+
+```cpp
+// В h323_endpoint.cpp
+#include "h323_timeout.hpp"
+
+bool H323Endpoint::registerWithGatekeeper(const std::string& gkAddress) {
+    H323TimeoutConfig timeout;
+    
+    LOG_INFO_FMT("Регистрация на Gatekeeper (таймаут %d сек)", 
+                 timeout.gatekeeperRegistration.count());
+    
+    bool result = tryExecuteWithTimeout(
+        [this, &gkAddress]() {
+            return endpoint_->RegisterGatekeeper(gkAddress.c_str());
+        },
+        timeout.gatekeeperRegistration,
+        "Gatekeeper registration"
+    );
+    
+    if (!result) {
+        LOG_ERROR("Таймаут регистрации на Gatekeeper");
+        return false;
+    }
+    
+    return true;
+}
+
+bool H323Endpoint::makeCall(const std::string& destination, std::string& callId) {
+    H323TimeoutConfig timeout;
+    
+    LOG_INFO_FMT("Создание вызова (таймаут %d сек)", timeout.callSetup.count());
+    
+    H323Connection* connection = tryExecuteWithTimeout(
+        [this, &destination]() {
+            return endpoint_->MakeCall(destination.c_str());
+        },
+        timeout.callSetup,
+        "Call setup"
+    );
+    
+    if (!connection) {
+        LOG_ERROR("Таймаут создания вызова");
+        return false;
+    }
+    
+    callId = (const char*)connection->GetCallReference();
+    return true;
+}
+```
+
+**Настройка через CLI:**
+
+```cpp
+// В cli/commands.hpp
+struct CommandConfig {
+    // ...
+    int timeoutSec = 0;  // 0 = использовать значения по умолчанию
+};
+
+// В cli/cli_parser.cpp
+app.add_option("--timeout,-t", config.timeoutSec, 
+               "Таймаут операций (сек)")
+    ->check(CLI::Range(1, 300));
+
+// В main.cpp или cmd_call.cpp
+if (config.timeoutSec > 0) {
+    timeoutConfig.gatekeeperRegistration = std::chrono::seconds(config.timeoutSec);
+    timeoutConfig.callSetup = std::chrono::seconds(config.timeoutSec);
+}
+```
+
+---
+
+### 2.2.2 Retry logic с exponential backoff
+
+**Проблема:** При временных ошибках сети вызов просто падает без попытки повторить.
+
+**Решение:** Добавить механизм повторных попыток с экспоненциальной задержкой.
+
+**Файл: `src/utils/retry.hpp`**
+
+```cpp
+#pragma once
+
+#include <chrono>
+#include <thread>
+#include <functional>
+#include <stdexcept>
+#include "utils/logging.hpp"
+
+namespace h323p {
+
+// Конфигурация retry
+struct RetryConfig {
+    size_t maxAttempts = 3;
+    std::chrono::milliseconds initialDelay = 100;
+    double backoffMultiplier = 2.0;
+    std::chrono::milliseconds maxDelay = std::chrono::seconds(10);
+    bool logAttempts = true;
+};
+
+// Исключение после всех попыток
+class MaxAttemptsExceededException : public std::runtime_error {
+public:
+    explicit MaxAttemptsExceededException(const std::string& operation, 
+                                          size_t maxAttempts,
+                                          const std::string& lastError)
+        : std::runtime_error("Operation '" + operation + "' failed after " + 
+                            std::to_string(maxAttempts) + " attempts. " +
+                            "Last error: " + lastError) {
+    }
+};
+
+// Выполнение с retry и exponential backoff
+template<typename Func, typename Rep, typename Period>
+auto retryWithBackoff(Func&& func, 
+                      const RetryConfig& config,
+                      const std::string& operation = "unnamed")
+    -> decltype(func())
+{
+    std::chrono::milliseconds delay = config.initialDelay;
+    std::string lastError = "unknown";
+    
+    for (size_t attempt = 0; attempt < config.maxAttempts; ++attempt) {
+        try {
+            return func();
+        } catch (const std::exception& e) {
+            lastError = e.what();
+            
+            if (attempt == config.maxAttempts - 1) {
+                throw MaxAttemptsExceededException(operation, config.maxAttempts, lastError);
+            }
+            
+            if (config.logAttempts) {
+                LOG_WARN_FMT("Attempt %zu/%zu failed for '%s': %s. Retrying in %dms",
+                            attempt + 1, config.maxAttempts, operation.c_str(), 
+                            lastError.c_str(), delay.count());
+            }
+            
+            std::this_thread::sleep_for(delay);
+            
+            // Exponential backoff с ограничением
+            delay = std::min(
+                config.maxDelay,
+                std::chrono::milliseconds(
+                    static_cast<long long>(delay.count() * config.backoffMultiplier)
+                )
+            );
+        }
+    }
+    
+    throw MaxAttemptsExceededException(operation, config.maxAttempts, lastError);
+}
+
+// Упрощённая версия для функций, возвращающих bool
+template<typename Func>
+bool retryBoolWithBackoff(Func&& func,
+                          const RetryConfig& config,
+                          const std::string& operation = "unnamed")
+{
+    try {
+        return retryWithBackoff(
+            [func = std::forward<Func>(func)]() -> bool {
+                if (!func()) {
+                    throw std::runtime_error("Function returned false");
+                }
+                return true;
+            },
+            config,
+            operation
+        );
+    } catch (const MaxAttemptsExceededException&) {
+        return false;
+    }
+}
+
+} // namespace h323p
+```
+
+**Пример использования:**
+
+```cpp
+// В h323/ras.cpp
+#include "utils/retry.hpp"
+
+bool GatekeeperManager::registerWithGatekeeper() {
+    RetryConfig retryConfig;
+    retryConfig.maxAttempts = 3;
+    retryConfig.initialDelay = std::chrono::milliseconds(500);
+    retryConfig.backoffMultiplier = 2.0;
+    
+    LOG_INFO("Регистрация на Gatekeeper с retry logic");
+    
+    bool result = retryBoolWithBackoff(
+        [this]() {
+            auto& endpoint = H323Endpoint::instance();
+            return endpoint.registerWithGatekeeper(config_.address);
+        },
+        retryConfig,
+        "Gatekeeper registration"
+    );
+    
+    if (result) {
+        setStatus(RegistrationStatus::REGISTERED);
+        LOG_INFO("Регистрация успешна после повторных попыток");
+    } else {
+        setStatus(RegistrationStatus::ERROR);
+        LOG_ERROR("Регистрация не удалась после всех попыток");
+    }
+    
+    return result;
+}
 ```
 
 ---
@@ -1058,6 +1556,274 @@ std::string releaseCauseToString(ReleaseCause cause) {
 }
 
 } // namespace h323p
+```
+
+---
+
+### 2.3.1 Логирование Q.931 Information Elements
+
+**Проблема:** При отладке непонятно, какие именно Information Elements (IE) передаются в сообщениях Q.931.
+
+**Решение:** Добавить функцию для детального логирования SETUP и других сообщений Q.931.
+
+**Файл: `src/h323/q931_logger.hpp`**
+
+```cpp
+#pragma once
+
+#include <h323.h>
+#include <h323con.h>
+#include "utils/logging.hpp"
+
+namespace h323p {
+
+// Уровни трассировки Q.931
+enum class Q931TraceLevel {
+    NONE = 0,
+    BASIC = 1,      // Только тип сообщения
+    DETAILS = 2,    // Основные IE
+    FULL = 3        // Все IE
+};
+
+// Логгер Q.931 сообщений
+class Q931Logger {
+public:
+    static void logSetupMessage(const H323Connection* connection, 
+                                const char* direction,
+                                Q931TraceLevel level);
+    
+    static void logCallProceedingMessage(const H323Connection* connection,
+                                         const char* direction,
+                                         Q931TraceLevel level);
+    
+    static void logAlertingMessage(const H323Connection* connection,
+                                   const char* direction,
+                                   Q931TraceLevel level);
+    
+    static void logConnectMessage(const H323Connection* connection,
+                                  const char* direction,
+                                  Q931TraceLevel level);
+    
+    static void logReleaseCompleteMessage(const H323Connection* connection,
+                                          const char* direction,
+                                          Q931TraceLevel level);
+
+private:
+    static void logBearerCapability(const H323Connection* connection);
+    static void logCallingPartyNumber(const H323Connection* connection);
+    static void logCalledPartyNumber(const H323Connection* connection);
+    static void logCallReferenceValue(const H323Connection* connection);
+    static void logMessageType(const H323Connection* connection);
+};
+
+} // namespace h323p
+```
+
+**Файл: `src/h323/q931_logger.cpp`**
+
+```cpp
+#include "q931_logger.hpp"
+#include <sstream>
+
+namespace h323p {
+
+void Q931Logger::logSetupMessage(const H323Connection* connection,
+                                  const char* direction,
+                                  Q931TraceLevel level) {
+    if (level == Q931TraceLevel::NONE) return;
+    
+    auto setup = connection->GetSetupMessage();
+    if (!setup) return;
+    
+    LOG_INFO_FMT("Q.931 %s SETUP:", direction);
+    
+    if (level >= Q931TraceLevel::BASIC) {
+        logCallReferenceValue(connection);
+        logMessageType(connection);
+    }
+    
+    if (level >= Q931TraceLevel::DETAILS) {
+        logCallingPartyNumber(connection);
+        logCalledPartyNumber(connection);
+        logBearerCapability(connection);
+    }
+}
+
+void Q931Logger::logCallProceedingMessage(const H323Connection* connection,
+                                           const char* direction,
+                                           Q931TraceLevel level) {
+    if (level == Q931TraceLevel::NONE) return;
+    
+    LOG_INFO_FMT("Q.931 %s CALL PROCEEDING:", direction);
+    
+    if (level >= Q931TraceLevel::BASIC) {
+        logCallReferenceValue(connection);
+    }
+}
+
+void Q931Logger::logAlertingMessage(const H323Connection* connection,
+                                     const char* direction,
+                                     Q931TraceLevel level) {
+    if (level == Q931TraceLevel::NONE) return;
+    
+    LOG_INFO_FMT("Q.931 %s ALERTING:", direction);
+    
+    if (level >= Q931TraceLevel::BASIC) {
+        logCallReferenceValue(connection);
+    }
+}
+
+void Q931Logger::logConnectMessage(const H323Connection* connection,
+                                    const char* direction,
+                                    Q931TraceLevel level) {
+    if (level == Q931TraceLevel::NONE) return;
+    
+    LOG_INFO_FMT("Q.931 %s CONNECT:", direction);
+    
+    if (level >= Q931TraceLevel::BASIC) {
+        logCallReferenceValue(connection);
+    }
+}
+
+void Q931Logger::logReleaseCompleteMessage(const H323Connection* connection,
+                                            const char* direction,
+                                            Q931TraceLevel level) {
+    if (level == Q931TraceLevel::NONE) return;
+    
+    auto release = connection->GetReleaseCompleteMessage();
+    
+    LOG_INFO_FMT("Q.931 %s RELEASE COMPLETE:", direction);
+    
+    if (level >= Q931TraceLevel::BASIC) {
+        logCallReferenceValue(connection);
+    }
+    
+    if (level >= Q931TraceLevel::DETAILS && release) {
+        auto cause = release->GetCause();
+        if (cause.GetCause() != 0) {
+            LOG_INFO_FMT("  Cause: %d (%s)", 
+                        cause.GetCause(),
+                        cause.GetDescription());
+        }
+    }
+}
+
+void Q931Logger::logCallReferenceValue(const H323Connection* connection) {
+    auto crv = connection->GetCallReference().GetValue();
+    LOG_INFO_FMT("  Call Reference Value: %u", crv);
+}
+
+void Q931Logger::logMessageType(const H323Connection* connection) {
+    auto setup = connection->GetSetupMessage();
+    if (setup) {
+        auto msgType = setup->GetMessageType();
+        LOG_INFO_FMT("  Message Type: %02X", msgType.GetTag());
+    }
+}
+
+void Q931Logger::logCallingPartyNumber(const H323Connection* connection) {
+    auto setup = connection->GetSetupMessage();
+    if (setup && setup->HasCallingPartyNumber()) {
+        auto number = setup->GetCallingPartyNumber();
+        LOG_INFO_FMT("  Calling Party Number: %s (type=%s)",
+                    (const char*)number,
+                    number.GetTypeOfNumber().AsString());
+    }
+}
+
+void Q931Logger::logCalledPartyNumber(const H323Connection* connection) {
+    auto setup = connection->GetSetupMessage();
+    if (setup && setup->HasCalledPartyNumber()) {
+        auto number = setup->GetCalledPartyNumber();
+        LOG_INFO_FMT("  Called Party Number: %s (type=%s)",
+                    (const char*)number,
+                    number.GetTypeOfNumber().AsString());
+    }
+}
+
+void Q931Logger::logBearerCapability(const H323Connection* connection) {
+    auto setup = connection->GetSetupMessage();
+    if (setup && setup->HasBearerCap()) {
+        auto bearer = setup->GetBearerCap();
+        LOG_INFO_FMT("  Bearer Capability: speech=%d, rate=%d",
+                    bearer.GetSpeechIndicator(),
+                    bearer.GetUserInformationLayer1Protocol());
+    }
+}
+
+} // namespace h323p
+```
+
+**Интеграция с H323Endpoint:**
+
+```cpp
+// В h323_endpoint.hpp
+#include "q931_logger.hpp"
+
+class H323Endpoint {
+    // ...
+    Q931TraceLevel q931TraceLevel_ = Q931TraceLevel::NONE;
+    
+public:
+    void setQ931TraceLevel(Q931TraceLevel level) { q931TraceLevel_ = level; }
+    // ...
+};
+
+// В h323_endpoint.cpp
+void H323Endpoint::onIncomingCall(H323Connection* connection) {
+    // Логирование SETUP сообщения
+    Q931Logger::logSetupMessage(connection, "RX (incoming)", q931TraceLevel_);
+    
+    // ... остальная логика
+}
+
+bool H323Endpoint::makeCall(const std::string& destination, std::string& callId) {
+    H323Connection* connection = endpoint_->MakeCall(destination.c_str());
+    
+    if (connection && q931TraceLevel_ != Q931TraceLevel::NONE) {
+        Q931Logger::logSetupMessage(connection, "TX (outgoing)", q931TraceLevel_);
+    }
+    
+    // ...
+}
+```
+
+**Пример вывода лога:**
+
+```
+2026-03-19 14:00:00.123 [INFO] Q.931 TX (outgoing) SETUP:
+2026-03-19 14:00:00.124 [INFO]   Call Reference Value: 1234
+2026-03-19 14:00:00.125 [INFO]   Message Type: 0C
+2026-03-19 14:00:00.126 [INFO]   Calling Party Number: +71234567890 (type=international)
+2026-03-19 14:00:00.127 [INFO]   Called Party Number: 1001 (type=unknown)
+2026-03-19 14:00:00.128 [INFO]   Bearer Capability: speech=1, rate=64kbps
+
+2026-03-19 14:00:00.230 [INFO] Q.931 RX (incoming) CALL PROCEEDING:
+2026-03-19 14:00:00.231 [INFO]   Call Reference Value: 1234
+
+2026-03-19 14:00:00.332 [INFO] Q.931 RX (incoming) ALERTING:
+2026-03-19 14:00:00.333 [INFO]   Call Reference Value: 1234
+
+2026-03-19 14:00:00.434 [INFO] Q.931 RX (incoming) CONNECT:
+2026-03-19 14:00:00.435 [INFO]   Call Reference Value: 1234
+```
+
+**CLI опция для включения трассировки:**
+
+```cpp
+// В cli/cli_parser.cpp
+app.add_flag("--trace", config.trace, "Включить трассировку Q.931");
+app.add_option("-t,--trace-level", config.traceLevel, 
+               "Уровень трассировки Q.931 (1-3)")
+    ->check(CLI::Range(1, 3));
+
+// В cmd_call.cpp
+if (config.trace || config.traceLevel > 0) {
+    auto& endpoint = H323Endpoint::instance();
+    endpoint.setQ931TraceLevel(
+        static_cast<Q931TraceLevel>(config.traceLevel > 0 ? config.traceLevel : 2)
+    );
+}
 ```
 
 ---
@@ -1760,6 +2526,10 @@ TEST(CallStateTest, CauseToString) {
 [ ] 7. Интеграционные тесты написаны
 [ ] 8. Все тесты проходят
 [ ] 9. Документация обновлена
+[ ] 10. Асинхронные события H323Plus реализованы
+[ ] 11. Таймауты на операции настроены
+[ ] 12. Retry logic работает
+[ ] 13. Логирование Q.931 IE доступно через --trace
 ```
 
 ---
@@ -2296,8 +3066,15 @@ make -j$(nproc)
 # С повторами
 ./h323p call 192.168.1.100 --repeat 5
 
-# С трассировкой
+# С трассировкой Q.931
+./h323p call 192.168.1.100 --trace
 ./h323p call 192.168.1.100 --trace -t 2
+
+# С таймаутом операций
+./h323p call 192.168.1.100 --timeout 30
+
+# Регистрация с retry logic
+./h323p register -g 192.168.1.1 --timeout 30
 ```
 
 ### Запуск команды listen
