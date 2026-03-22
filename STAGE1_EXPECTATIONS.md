@@ -313,7 +313,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Установка зависимостей
-        run: sudo apt-get install -y cmake libssl-dev libcpputest-dev
+        run: sudo apt-get install -y cmake libssl-dev
       - name: Настройка CMake
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release
       - name: Сборка

@@ -22,21 +22,21 @@
 **Ubuntu/Debian:**
 ```bash
 sudo apt-get update
-sudo apt-get install -y build-essential cmake git libssl-dev libcpputest-dev
+sudo apt-get install -y build-essential cmake git libssl-dev
 ```
 
 **Fedora/RHEL:**
 ```bash
-sudo dnf install -y gcc-c++ cmake git openssl-devel cpputest-devel
+sudo dnf install -y gcc-c++ cmake git openssl-devel
 ```
 
 **macOS:**
 ```bash
 xcode-select --install
-brew install cmake openssl cpputest
+brew install cmake openssl
 ```
 
-> **Note:** The only system dependencies are OpenSSL and CppUTest. All other dependencies (CLI11, pugixml, PTLib, H323Plus) are built from git submodules.
+> **Note:** The only system dependency is OpenSSL. All other dependencies (CppUTest, CLI11, pugixml, PTLib, H323Plus) are built from git submodules automatically.
 
 ### Clone with Submodules
 

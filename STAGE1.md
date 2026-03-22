@@ -1389,22 +1389,18 @@ jobs:
         sudo apt-get install -y \
           build-essential \
           cmake \
-          libssl-dev \
-          libcpputest-dev \
-          libcli11-dev \
-          libspdlog-dev \
-          libpugixml-dev
-    
+          libssl-dev
+
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-    
+
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
-    
+
     - name: Test
       working-directory: ${{github.workspace}}/build
       run: ctest --build-config ${{env.BUILD_TYPE}} --output-on-failure
-    
+
     - name: Upload binary
       uses: actions/upload-artifact@v3
       with:
