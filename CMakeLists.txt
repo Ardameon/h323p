@@ -57,25 +57,56 @@ message(STATUS "Building pugixml from submodule...")
 add_subdirectory(deps/pugixml)
 
 # CppUTest (for tests)
-# Note: Using system package due to C++17 compatibility issues with older CppUTest versions
+# Build from submodule with C++11 using ExternalProject for isolation
 if(BUILD_TESTS)
-    message(STATUS "Searching for system CppUTest...")
-    find_path(CPPUTEST_INCLUDE_DIR CppUTest/TestHarness.h
-        PATHS /usr/include /usr/local/include)
-    find_library(CPPUTEST_LIBRARY NAMES CppUTest cpputest
-        PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu)
-
-    if(CPPUTEST_INCLUDE_DIR AND CPPUTEST_LIBRARY)
-        set(CppUTest_FOUND TRUE)
-        add_library(CppUTest::CppUTest STATIC IMPORTED)
-        set_target_properties(CppUTest::CppUTest PROPERTIES
-            IMPORTED_LOCATION ${CPPUTEST_LIBRARY}
-            INTERFACE_INCLUDE_DIRECTORIES ${CPPUTEST_INCLUDE_DIR})
-        message(STATUS "Found system CppUTest: ${CPPUTEST_LIBRARY}")
-    else()
-        message(WARNING "System CppUTest not found, tests disabled. Install libcpputest-dev")
-        set(BUILD_TESTS OFF)
-    endif()
+    message(STATUS "Building CppUTest from submodule...")
+    
+    include(ExternalProject)
+    
+    # Paths for CppUTest build (note: libraries are in src/ subdirectory)
+    set(CPPUTEST_BUILD_DIR "${CMAKE_BINARY_DIR}/_deps/cpputest_build")
+    set(CPPUTEST_LIB_DIR "${CPPUTEST_BUILD_DIR}/src/CppUTest")
+    set(CPPUTEST_EXT_LIB_DIR "${CPPUTEST_BUILD_DIR}/src/CppUTestExt")
+    
+    # Build CppUTest separately with C++11 to avoid polluting global C++17 flags
+    ExternalProject_Add(CppUTest_build
+        SOURCE_DIR "${CMAKE_SOURCE_DIR}/deps/cpputest"
+        BINARY_DIR "${CPPUTEST_BUILD_DIR}"
+        CMAKE_ARGS
+            -DCMAKE_C_COMPILER=/usr/bin/gcc
+            -DCMAKE_CXX_COMPILER=/usr/bin/g++
+            -DCMAKE_CXX_STANDARD=11
+            -DCMAKE_CXX_STANDARD_REQUIRED=ON
+            -DCMAKE_CXX_EXTENSIONS=OFF
+            -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+            -DCPPUTEST_BUILD_STATIC_LIBS=ON
+            -DCPPUTEST_BUILD_32_BIT=OFF
+            -DCPPUTEST_BUILD_TESTING=OFF
+            -DCPPUTEST_EXTENSIONS=OFF
+            -DCPPUTEST_MEM_LEAK_DETECTION_DISABLED=OFF
+            -DPROJECT_IS_TOP_LEVEL=OFF
+        BUILD_COMMAND $(MAKE)
+        INSTALL_COMMAND ""  # No install step - use build directory directly
+        STEP_TARGETS build
+    )
+    
+    # Create imported target for CppUTest (will exist after build)
+    add_library(CppUTest::CppUTest STATIC IMPORTED GLOBAL)
+    set_target_properties(CppUTest::CppUTest PROPERTIES
+        IMPORTED_LOCATION "${CPPUTEST_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}CppUTest${CMAKE_STATIC_LIBRARY_SUFFIX}"
+        INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_SOURCE_DIR}/deps/cpputest/include;${CPPUTEST_BUILD_DIR}"
+    )
+    add_dependencies(CppUTest::CppUTest CppUTest_build)
+    
+    # Create imported target for CppUTestExt
+    add_library(CppUTest::CppUTestExt STATIC IMPORTED GLOBAL)
+    set_target_properties(CppUTest::CppUTestExt PROPERTIES
+        IMPORTED_LOCATION "${CPPUTEST_EXT_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}CppUTestExt${CMAKE_STATIC_LIBRARY_SUFFIX}"
+        INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_SOURCE_DIR}/deps/cpputest/include;${CPPUTEST_BUILD_DIR}"
+    )
+    add_dependencies(CppUTest::CppUTestExt CppUTest_build)
+    
+    set(CppUTest_FOUND TRUE)
 endif()
 
 # OpenSSL (system library - required for SSL/TLS support)
