@@ -13,101 +13,53 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Build options
 option(BUILD_TESTS "Build unit tests" ON)
 option(BUILD_DOCS "Build documentation" OFF)
-option(USE_H323PLUS "Use H323Plus library" OFF)  # Disabled for Stage 1
+option(USE_H323PLUS "Use H323Plus library" OFF)
 
-# Submodule options
-option(BUILD_H323PLUS_FROM_SUBMODULE "Build H323Plus from git submodule" OFF)
-option(BUILD_CPPUTEST_FROM_SUBMODULE "Build CppUTest from git submodule" OFF)
-option(BUILD_CLI11_FROM_SUBMODULE "Build CLI11 from git submodule" OFF)
-option(BUILD_PUGIXML_FROM_SUBMODULE "Build pugixml from git submodule" OFF)
+# ============================================================================
+# Check submodules
+# ============================================================================
 
-# Module path
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+set(SUBMODULES_OK TRUE)
+
+if(NOT EXISTS "${CMAKE_SOURCE_DIR}/deps/ptlib/configure")
+    message(FATAL_ERROR "PTLib submodule not found. Run: git submodule update --init --recursive")
+endif()
+
+if(NOT EXISTS "${CMAKE_SOURCE_DIR}/deps/h323plus/configure")
+    message(FATAL_ERROR "H323Plus submodule not found. Run: git submodule update --init --recursive")
+endif()
+
+# Note: CppUTest uses system package due to C++17 compatibility issues
+
+if(NOT EXISTS "${CMAKE_SOURCE_DIR}/deps/cli11/CMakeLists.txt")
+    message(FATAL_ERROR "CLI11 submodule not found. Run: git submodule update --init --recursive")
+endif()
+
+if(NOT EXISTS "${CMAKE_SOURCE_DIR}/deps/pugixml/CMakeLists.txt")
+    message(FATAL_ERROR "pugixml submodule not found. Run: git submodule update --init --recursive")
+endif()
 
 # ============================================================================
 # Dependencies from submodules
 # ============================================================================
 
-# H323Plus + PTLib from submodule
-if(BUILD_H323PLUS_FROM_SUBMODULE)
-    message(STATUS "Building H323Plus from submodule...")
-    
-    # Build PTLib first (required by H323Plus)
-    set(PTLIB_DIR "${CMAKE_SOURCE_DIR}/deps/ptlib")
-    set(PWLIB_DIR "${PTLIB_DIR}")  # Legacy name
-    
-    # PTLib include directories
-    set(PTLIB_INCLUDE_DIRS 
-        "${PTLIB_DIR}/include"
-        "${PTLIB_DIR}/src/ptlib/unix"
-    )
-    
-    # PTLib library
-    set(PTLIB_LIBRARIES "${PTLIB_DIR}/lib/libptlib.a")
-    set(PTLIB_FOUND TRUE)
-    
-    # H323Plus include directories
-    set(H323PLUS_INCLUDE_DIRS 
-        "${H323PLUS_DIR}/include"
-        "${PTLIB_INCLUDE_DIRS}"
-    )
-    
-    # H323Plus library
-    set(H323PLUS_LIBRARIES "${H323PLUS_DIR}/lib/libh323_linux_x86_64.a")
-    set(H323PLUS_FOUND TRUE)
-    
-    set(USE_H323PLUS ON)
-    message(STATUS "H323Plus submodule configured")
-    message(STATUS "  PTLib: ${PTLIB_DIR}")
-    message(STATUS "  H323Plus: ${H323PLUS_DIR}")
-endif()
+# PTLib
+message(STATUS "Building PTLib from submodule...")
+set(PTLIB_DIR "${CMAKE_SOURCE_DIR}/deps/ptlib")
+set(PWLIB_DIR "${PTLIB_DIR}")
 
-# CppUTest from submodule
-if(BUILD_CPPUTEST_FROM_SUBMODULE)
-    message(STATUS "Building CppUTest from submodule...")
-    add_subdirectory(deps/cpputest)
-    set(CppUTest_FOUND TRUE)
-endif()
+# CLI11 - header only library
+message(STATUS "Building CLI11 from submodule...")
+add_subdirectory(deps/cli11)
 
-# CLI11 from submodule
-if(BUILD_CLI11_FROM_SUBMODULE)
-    message(STATUS "Building CLI11 from submodule...")
-    add_subdirectory(deps/cli11)
-endif()
+# pugixml
+message(STATUS "Building pugixml from submodule...")
+add_subdirectory(deps/pugixml)
 
-# pugixml from submodule
-if(BUILD_PUGIXML_FROM_SUBMODULE)
-    message(STATUS "Building pugixml from submodule...")
-    add_subdirectory(deps/pugixml)
-endif()
-
-# ============================================================================
-# Dependencies (system or submodule)
-# ============================================================================
-
-# H323Plus (optional for Stage 1)
-if(USE_H323PLUS AND NOT BUILD_H323PLUS_FROM_SUBMODULE)
-    find_package(H323Plus REQUIRED)
-    find_package(PTLib REQUIRED)
-endif()
-
-# Required dependencies
-find_package(OpenSSL REQUIRED)
-
-# Optional dependencies (if not using submodules)
-if(NOT BUILD_CLI11_FROM_SUBMODULE)
-    find_package(CLI11 CONFIG)
-endif()
-
-find_package(spdlog CONFIG)
-
-if(NOT BUILD_PUGIXML_FROM_SUBMODULE)
-    find_package(pugixml CONFIG)
-endif()
-
-# CppUTest (for tests) - workaround for Ubuntu package bug
-# Ubuntu's libcpputest-dev has broken cmake config, so we find it manually
-if(BUILD_TESTS AND NOT BUILD_CPPUTEST_FROM_SUBMODULE)
+# CppUTest (for tests)
+# Note: Using system package due to C++17 compatibility issues with older CppUTest versions
+if(BUILD_TESTS)
+    message(STATUS "Searching for system CppUTest...")
     find_path(CPPUTEST_INCLUDE_DIR CppUTest/TestHarness.h
         PATHS /usr/include /usr/local/include)
     find_library(CPPUTEST_LIBRARY NAMES CppUTest cpputest
@@ -119,12 +71,15 @@ if(BUILD_TESTS AND NOT BUILD_CPPUTEST_FROM_SUBMODULE)
         set_target_properties(CppUTest::CppUTest PROPERTIES
             IMPORTED_LOCATION ${CPPUTEST_LIBRARY}
             INTERFACE_INCLUDE_DIRECTORIES ${CPPUTEST_INCLUDE_DIR})
-        message(STATUS "Found CppUTest: ${CPPUTEST_LIBRARY}")
+        message(STATUS "Found system CppUTest: ${CPPUTEST_LIBRARY}")
     else()
-        message(WARNING "CppUTest not found, tests disabled")
+        message(WARNING "System CppUTest not found, tests disabled. Install libcpputest-dev")
         set(BUILD_TESTS OFF)
     endif()
 endif()
+
+# OpenSSL (system library - required for SSL/TLS support)
+find_package(OpenSSL REQUIRED)
 
 # ============================================================================
 # Source files
@@ -161,38 +116,23 @@ add_executable(h323p ${H323P_SOURCES} ${H323P_HEADERS})
 # Include directories
 target_include_directories(h323p PRIVATE
     ${CMAKE_SOURCE_DIR}/src
+    ${PTLIB_DIR}/include
+    ${PTLIB_DIR}/src/ptlib/unix
 )
 
 # Link libraries
 target_link_libraries(h323p PRIVATE
     OpenSSL::SSL
     OpenSSL::Crypto
+    CLI11::CLI11
+    pugixml-static
 )
 
-# Optional linking
-if(USE_H323PLUS AND H323PLUS_FOUND)
-    target_include_directories(h323p PRIVATE
-        ${H323PLUS_INCLUDE_DIRS}
-        ${PTLIB_INCLUDE_DIRS}
-    )
-    target_link_libraries(h323p PRIVATE
-        ${H323PLUS_LIBRARIES}
-        ${PTLIB_LIBRARIES}
-    )
-endif()
-
-if(CLI11_FOUND)
-    target_link_libraries(h323p PRIVATE CLI11::CLI11)
-else()
-    message(STATUS "CLI11 not found, using internal parser")
-endif()
-
-if(spdlog_FOUND)
-    target_link_libraries(h323p PRIVATE spdlog::spdlog)
-endif()
-
-if(pugixml_FOUND)
-    target_link_libraries(h323p PRIVATE pugixml::pugixml)
+# H323Plus (optional for Stage 2+)
+if(USE_H323PLUS)
+    message(STATUS "H323Plus support enabled (Stage 2+)")
+    # Note: H323Plus requires manual build via ./configure
+    # See INSTALL.md for instructions
 endif()
 
 # Compiler definitions
@@ -216,8 +156,6 @@ target_compile_options(h323p PRIVATE
 if(BUILD_TESTS AND CppUTest_FOUND)
     enable_testing()
     add_subdirectory(tests)
-else()
-    message(STATUS "CppUTest not found, tests disabled")
 endif()
 
 # ============================================================================
@@ -238,3 +176,20 @@ if(BUILD_DOCS)
         doxygen_add_docs(docs ${CMAKE_SOURCE_DIR}/src)
     endif()
 endif()
+
+# ============================================================================
+# Summary
+# ============================================================================
+
+message(STATUS "")
+message(STATUS "h323p ${PROJECT_VERSION} configuration summary:")
+message(STATUS "  Build type:        ${CMAKE_BUILD_TYPE}")
+message(STATUS "  Build tests:       ${BUILD_TESTS}")
+message(STATUS "  H323Plus support:  ${USE_H323PLUS}")
+message(STATUS "  Submodules:")
+message(STATUS "    PTLib:           ${PTLIB_DIR}")
+message(STATUS "    H323Plus:        ${CMAKE_SOURCE_DIR}/deps/h323plus")
+message(STATUS "    CppUTest:        ${CMAKE_SOURCE_DIR}/deps/cpputest")
+message(STATUS "    CLI11:           ${CMAKE_SOURCE_DIR}/deps/cli11")
+message(STATUS "    pugixml:         ${CMAKE_SOURCE_DIR}/deps/pugixml")
+message(STATUS "")

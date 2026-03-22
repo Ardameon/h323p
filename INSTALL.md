@@ -9,53 +9,25 @@ This guide describes how to build and install h323p from source.
 **Ubuntu/Debian:**
 ```bash
 sudo apt-get update
-sudo apt-get install -y build-essential cmake git
+sudo apt-get install -y build-essential cmake git libssl-dev libcpputest-dev
 ```
 
 **Fedora/RHEL:**
 ```bash
-sudo dnf install -y gcc-c++ cmake git
+sudo dnf install -y gcc-c++ cmake git openssl-devel cpputest-devel
 ```
 
 **macOS:**
 ```bash
 xcode-select --install
-brew install cmake
+brew install cmake openssl cpputest
 ```
 
-### Required Libraries
-
-**Ubuntu/Debian:**
-```bash
-sudo apt-get install -y libssl-dev
-```
-
-**Fedora/RHEL:**
-```bash
-sudo dnf install -y openssl-devel
-```
-
-**macOS:**
-```bash
-brew install openssl
-```
+> **Note:** The only system dependencies are OpenSSL and CppUTest. All other dependencies (CLI11, pugixml, PTLib, H323Plus) are built from git submodules. CppUTest uses system package due to C++17 compatibility issues with the submodule version.
 
 ---
 
-## Installation Options
-
-h323p supports two installation methods:
-
-| Method | Description | Pros | Cons |
-|--------|-------------|------|------|
-| **System packages** | Use apt/dnf installed libraries | Faster build, smaller download | Requires system packages |
-| **Git submodules** | Build dependencies from source | Self-contained, no system deps | Longer build time, larger download |
-
----
-
-## Option 1: Build with Git Submodules (Recommended)
-
-This method downloads and builds all dependencies automatically.
+## Quick Start
 
 ### Clone with Submodules
 
@@ -72,140 +44,97 @@ cd h323p
 git submodule update --init --recursive
 ```
 
-### Configure with CMake
-
-**Basic build (Stage 1 - no H323Plus):**
-```bash
-mkdir build && cd build
-cmake .. \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DBUILD_CPPUTEST_FROM_SUBMODULE=ON \
-    -DBUILD_CLI11_FROM_SUBMODULE=ON
-```
-
-**Full build (with H323Plus from submodule):**
-```bash
-mkdir build && cd build
-cmake .. \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DBUILD_H323PLUS_FROM_SUBMODULE=ON \
-    -DH323PLUS_DIR=../deps/h323plus \
-    -DBUILD_CPPUTEST_FROM_SUBMODULE=ON \
-    -DBUILD_CLI11_FROM_SUBMODULE=ON \
-    -DBUILD_PUGIXML_FROM_SUBMODULE=ON
-```
-
-> **Note:** Building H323Plus from submodule requires manual build of PTLib and H323Plus libraries first (see "Building H323Plus" section below).
-
 ### Build
 
 ```bash
-cmake --build . -j$(nproc)
+# Create build directory
+mkdir build && cd build
+
+# Configure with CMake
+cmake .. -DCMAKE_BUILD_TYPE=Release
+
+# Build
+make -j$(nproc)
+```
+
+### Build with Tests
+
+```bash
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON
+make -j$(nproc)
+```
+
+### Run Tests
+
+```bash
+# Run all tests
+ctest --output-on-failure
+
+# Run with verbose output
+ctest -V
 ```
 
 ---
 
-## Option 2: Build with System Packages
+## Build Options
 
-### Install Optional Dependencies
+| Option | Default | Description |
+|--------|---------|-------------|
+| `CMAKE_BUILD_TYPE` | `Release` | Build type (`Debug` or `Release`) |
+| `BUILD_TESTS` | `ON` | Build unit tests |
+| `BUILD_DOCS` | `OFF` | Build documentation (requires Doxygen) |
+| `USE_H323PLUS` | `OFF` | Enable H323Plus support (Stage 2+) |
 
-**For testing (CppUTest):**
+### Example Configurations
+
+**Debug build with tests:**
 ```bash
-# Ubuntu/Debian
-sudo apt-get install -y libcpputest-dev
-
-# Or build from source
-git clone https://github.com/cpputest/cpputest.git
-cd cpputest
-mkdir build && cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local
-make -j$(nproc)
-sudo make install
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON
 ```
 
-**For CLI parsing (CLI11):**
+**Release build without tests:**
 ```bash
-# Ubuntu/Debian (if available)
-sudo apt-get install -y libcli11-dev
-
-# Or install via package manager
-# macOS
-brew install cli11
+cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF
 ```
 
-**For XML parsing (pugixml):**
-```bash
-# Ubuntu/Debian
-sudo apt-get install -y libpugixml-dev
-```
+---
 
-### Building H323Plus (Optional - for Stage 2+)
+## H323Plus Support (Stage 2+)
 
-H323Plus is required for full H.323 functionality (Stage 2+).
+H323Plus is required for full H.323 functionality (Stage 2+). The submodule is included but requires manual build.
+
+### Build PTLib
 
 ```bash
-# Clone PTLib
-git clone https://github.com/willamowius/ptlib.git
-cd ptlib
+cd deps/ptlib
 ./configure --enable-ipv6 --disable-odbc --disable-sdl --disable-lua
 make debugnoshared
 export PTLIBDIR=$(pwd)
+```
 
-# Clone H323Plus
-cd ..
-git clone https://github.com/willamowius/h323plus.git
-cd h323plus
+### Build H323Plus
+
+```bash
+cd ../h323plus
 ./configure --enable-h235 --enable-h46017 --enable-h46019m
 make debugnoshared
 export OPENH323DIR=$(pwd)
 ```
 
-### Clone the Repository
+### Build h323p with H323Plus
 
 ```bash
-git clone https://github.com/Ardameon/h323p.git
-cd h323p
-```
-
-### Configure with CMake
-
-**Basic build (Stage 1 - no H323Plus):**
-```bash
-mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
-```
-
-**Full build (with H323Plus):**
-```bash
+cd ../../
 mkdir build && cd build
 cmake .. \
     -DCMAKE_BUILD_TYPE=Release \
-    -DH323PLUS_DIR=$OPENH323DIR \
-    -DUSE_H323PLUS=ON
-```
-
-**With tests:**
-```bash
-cmake .. -DBUILD_TESTS=ON
-```
-
-**With documentation:**
-```bash
-cmake .. -DBUILD_DOCS=ON
+    -DUSE_H323PLUS=ON \
+    -DH323PLUS_DIR=${OPENH323DIR}
+make -j$(nproc)
 ```
 
 ---
-
-## Build
-
-```bash
-cmake --build . -j$(nproc)
-```
-
-Or:
-```bash
-make -j$(nproc)
-```
 
 ## Install (Optional)
 
@@ -217,18 +146,7 @@ This installs:
 - Binary to `/usr/local/bin/h323p`
 - Scenarios to `/usr/local/share/h323p/scenarios/`
 
-## Running Tests
-
-```bash
-# Run all tests
-ctest --output-on-failure
-
-# Run specific test group
-ctest -R UtilsTest --output-on-failure
-
-# Run with verbose output
-ctest -V
-```
+---
 
 ## Verification
 
@@ -245,18 +163,41 @@ After building, verify the installation:
 ./h323p call 192.168.1.100
 ```
 
+---
+
 ## Troubleshooting
 
-### CMake cannot find H323Plus
+### Submodules not initialized
 
-Make sure you have set the correct path:
-```bash
-cmake .. -DH323PLUS_DIR=/path/to/h323plus
+```
+FATAL_ERROR: PTLib submodule not found. Run: git submodule update --init --recursive
 ```
 
-Or set the environment variable:
+**Solution:**
 ```bash
-export OPENH323DIR=/path/to/h323plus
+git submodule update --init --recursive
+```
+
+### CMake cannot find OpenSSL
+
+```
+Could NOT find OpenSSL
+```
+
+**Solution (Ubuntu/Debian):**
+```bash
+sudo apt-get install -y libssl-dev
+```
+
+**Solution (Fedora/RHEL):**
+```bash
+sudo dnf install -y openssl-devel
+```
+
+**Solution (macOS):**
+```bash
+brew install openssl
+export OPENSSL_ROOT_DIR=$(brew --prefix openssl)
 ```
 
 ### Build fails with C++ errors
@@ -266,13 +207,33 @@ Ensure you have a C++17 compatible compiler:
 g++ --version  # Should be 7.0+ or equivalent
 ```
 
-### Tests fail to run
+---
 
-Make sure CppUTest is installed and CMake found it:
+## Submodule Management
+
+### Update all submodules
+
 ```bash
-cmake .. -DBUILD_TESTS=ON
-# Check output for "CppUTest found" message
+git submodule update --remote --recursive
 ```
+
+### Update specific submodule
+
+```bash
+cd deps/cli11
+git pull origin main
+cd ../..
+git add deps/cli11
+git commit -m "Update CLI11 submodule"
+```
+
+### Check submodule status
+
+```bash
+git submodule status
+```
+
+---
 
 ## Next Steps
 
@@ -283,4 +244,4 @@ After successful installation:
 
 ---
 
-*Last updated: 2026-03-16*
+*Last updated: 2026-03-22*

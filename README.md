@@ -17,35 +17,50 @@
 
 ## 🚀 Quick Start
 
-### Option 1: Build with Git Submodules (Recommended)
+### Prerequisites
 
+**Ubuntu/Debian:**
 ```bash
-# Clone with submodules
-git clone --recurse-submodules https://github.com/Ardameon/h323p.git
-cd h323p
-
-# Build with dependencies from submodules
-mkdir build && cd build
-cmake .. \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DBUILD_CPPUTEST_FROM_SUBMODULE=ON \
-    -DBUILD_CLI11_FROM_SUBMODULE=ON
-make -j$(nproc)
+sudo apt-get update
+sudo apt-get install -y build-essential cmake git libssl-dev libcpputest-dev
 ```
 
-### Option 2: Build with System Packages
+**Fedora/RHEL:**
+```bash
+sudo dnf install -y gcc-c++ cmake git openssl-devel cpputest-devel
+```
+
+**macOS:**
+```bash
+xcode-select --install
+brew install cmake openssl cpputest
+```
+
+> **Note:** The only system dependencies are OpenSSL and CppUTest. All other dependencies (CLI11, pugixml, PTLib, H323Plus) are built from git submodules.
+
+### Clone with Submodules
 
 ```bash
-# Install dependencies (Ubuntu/Debian)
-sudo apt-get install -y build-essential cmake libssl-dev libcpputest-dev
-
-# Clone repository
-git clone https://github.com/Ardameon/h323p.git
+# Clone repository with all submodules
+git clone --recurse-submodules https://github.com/Ardameon/h323p.git
 cd h323p
+```
+
+Or for existing repository:
+```bash
+git submodule update --init --recursive
+```
+
+### Build
+
+```bash
+# Create build directory
+mkdir build && cd build
+
+# Configure with CMake
+cmake .. -DCMAKE_BUILD_TYPE=Release
 
 # Build
-mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j$(nproc)
 ```
 
@@ -103,45 +118,31 @@ make -j$(nproc)
 
 ### Stage 1 Features
 
-- ✅ CMake build system with H323Plus/PTLib support
+- ✅ CMake build system with git submodules
 - ✅ CLI parser with 6 commands (call, listen, load, fuzz, register, info)
 - ✅ Async logging system with background thread
 - ✅ Timer utilities (ElapsedTimer, CountdownTimer)
 - ✅ String and file utilities
 - ✅ Core stubs for Stage 2 (CallManager, Call, Endpoint)
-- ✅ Unit tests with CppUTest (42 tests passing)
+- ✅ Unit tests with CppUTest
 - ✅ Integration tests
 - ✅ Graceful Shutdown handler (SIGINT/SIGTERM)
 - ✅ CI/CD workflow (GitHub Actions)
 
 ## 🔧 Dependencies
 
-### Required
-- C++17 compiler
-- CMake 3.16+
-- OpenSSL
+All dependencies are included as git submodules (except OpenSSL and CppUTest):
 
-### Optional (for full functionality)
-- H323Plus + PTLib (Stage 2+)
-- CppUTest (testing)
-- CLI11 (CLI parsing)
-- pugixml (XML parsing)
+| Dependency | Purpose | Source |
+|------------|---------|--------|
+| **OpenSSL** | SSL/TLS support | System package |
+| **CppUTest** | Unit testing | System package (*) |
+| **CLI11** | CLI parsing | `deps/cli11/` |
+| **pugixml** | XML parsing | `deps/pugixml/` |
+| **PTLib** | H.323Plus dependency | `deps/ptlib/` |
+| **H323Plus** | H.323 stack (Stage 2+) | `deps/h323plus/` |
 
-### Using Git Submodules
-
-All dependencies can be automatically downloaded and built using git submodules:
-
-```bash
-git clone --recurse-submodules https://github.com/Ardameon/h323p.git
-cd h323p
-```
-
-This clones:
-- `deps/ptlib` — PTLib library
-- `deps/h323plus` — H323Plus library (Stage 2+)
-- `deps/cpputest` — CppUTest test framework
-- `deps/cli11` — CLI11 command-line parser
-- `deps/pugixml` — pugixml XML parser
+(*) CppUTest uses system package due to C++17 compatibility issues.
 
 See [INSTALL.md](INSTALL.md) for detailed build instructions.
 
@@ -150,7 +151,7 @@ See [INSTALL.md](INSTALL.md) for detailed build instructions.
 ```bash
 # Build with tests
 mkdir build && cd build
-cmake .. -DBUILD_TESTS=ON
+cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON
 make -j$(nproc)
 
 # Run all tests
@@ -179,4 +180,4 @@ Distributed under the [MPL-2.0 License](LICENSE).
 
 ---
 
-*Version: 0.1.0 | Updated: 2026-03-16*
+*Version: 0.1.0 | Updated: 2026-03-22*
