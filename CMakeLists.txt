@@ -15,15 +15,78 @@ option(BUILD_TESTS "Build unit tests" ON)
 option(BUILD_DOCS "Build documentation" OFF)
 option(USE_H323PLUS "Use H323Plus library" OFF)  # Disabled for Stage 1
 
+# Submodule options
+option(BUILD_H323PLUS_FROM_SUBMODULE "Build H323Plus from git submodule" OFF)
+option(BUILD_CPPUTEST_FROM_SUBMODULE "Build CppUTest from git submodule" OFF)
+option(BUILD_CLI11_FROM_SUBMODULE "Build CLI11 from git submodule" OFF)
+option(BUILD_PUGIXML_FROM_SUBMODULE "Build pugixml from git submodule" OFF)
+
 # Module path
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 # ============================================================================
-# Dependencies
+# Dependencies from submodules
+# ============================================================================
+
+# H323Plus + PTLib from submodule
+if(BUILD_H323PLUS_FROM_SUBMODULE)
+    message(STATUS "Building H323Plus from submodule...")
+    
+    # Build PTLib first (required by H323Plus)
+    set(PTLIB_DIR "${CMAKE_SOURCE_DIR}/deps/ptlib")
+    set(PWLIB_DIR "${PTLIB_DIR}")  # Legacy name
+    
+    # PTLib include directories
+    set(PTLIB_INCLUDE_DIRS 
+        "${PTLIB_DIR}/include"
+        "${PTLIB_DIR}/src/ptlib/unix"
+    )
+    
+    # PTLib library
+    set(PTLIB_LIBRARIES "${PTLIB_DIR}/lib/libptlib.a")
+    set(PTLIB_FOUND TRUE)
+    
+    # H323Plus include directories
+    set(H323PLUS_INCLUDE_DIRS 
+        "${H323PLUS_DIR}/include"
+        "${PTLIB_INCLUDE_DIRS}"
+    )
+    
+    # H323Plus library
+    set(H323PLUS_LIBRARIES "${H323PLUS_DIR}/lib/libh323_linux_x86_64.a")
+    set(H323PLUS_FOUND TRUE)
+    
+    set(USE_H323PLUS ON)
+    message(STATUS "H323Plus submodule configured")
+    message(STATUS "  PTLib: ${PTLIB_DIR}")
+    message(STATUS "  H323Plus: ${H323PLUS_DIR}")
+endif()
+
+# CppUTest from submodule
+if(BUILD_CPPUTEST_FROM_SUBMODULE)
+    message(STATUS "Building CppUTest from submodule...")
+    add_subdirectory(deps/cpputest)
+    set(CppUTest_FOUND TRUE)
+endif()
+
+# CLI11 from submodule
+if(BUILD_CLI11_FROM_SUBMODULE)
+    message(STATUS "Building CLI11 from submodule...")
+    add_subdirectory(deps/cli11)
+endif()
+
+# pugixml from submodule
+if(BUILD_PUGIXML_FROM_SUBMODULE)
+    message(STATUS "Building pugixml from submodule...")
+    add_subdirectory(deps/pugixml)
+endif()
+
+# ============================================================================
+# Dependencies (system or submodule)
 # ============================================================================
 
 # H323Plus (optional for Stage 1)
-if(USE_H323PLUS)
+if(USE_H323PLUS AND NOT BUILD_H323PLUS_FROM_SUBMODULE)
     find_package(H323Plus REQUIRED)
     find_package(PTLib REQUIRED)
 endif()
@@ -31,19 +94,25 @@ endif()
 # Required dependencies
 find_package(OpenSSL REQUIRED)
 
-# Optional dependencies
-find_package(CLI11 CONFIG)
+# Optional dependencies (if not using submodules)
+if(NOT BUILD_CLI11_FROM_SUBMODULE)
+    find_package(CLI11 CONFIG)
+endif()
+
 find_package(spdlog CONFIG)
-find_package(pugixml CONFIG)
+
+if(NOT BUILD_PUGIXML_FROM_SUBMODULE)
+    find_package(pugixml CONFIG)
+endif()
 
 # CppUTest (for tests) - workaround for Ubuntu package bug
 # Ubuntu's libcpputest-dev has broken cmake config, so we find it manually
-if(BUILD_TESTS)
+if(BUILD_TESTS AND NOT BUILD_CPPUTEST_FROM_SUBMODULE)
     find_path(CPPUTEST_INCLUDE_DIR CppUTest/TestHarness.h
         PATHS /usr/include /usr/local/include)
     find_library(CPPUTEST_LIBRARY NAMES CppUTest cpputest
         PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu)
-    
+
     if(CPPUTEST_INCLUDE_DIR AND CPPUTEST_LIBRARY)
         set(CppUTest_FOUND TRUE)
         add_library(CppUTest::CppUTest STATIC IMPORTED)

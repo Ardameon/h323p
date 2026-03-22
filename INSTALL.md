@@ -40,7 +40,74 @@ sudo dnf install -y openssl-devel
 brew install openssl
 ```
 
-### Optional Dependencies
+---
+
+## Installation Options
+
+h323p supports two installation methods:
+
+| Method | Description | Pros | Cons |
+|--------|-------------|------|------|
+| **System packages** | Use apt/dnf installed libraries | Faster build, smaller download | Requires system packages |
+| **Git submodules** | Build dependencies from source | Self-contained, no system deps | Longer build time, larger download |
+
+---
+
+## Option 1: Build with Git Submodules (Recommended)
+
+This method downloads and builds all dependencies automatically.
+
+### Clone with Submodules
+
+```bash
+# Clone repository with all submodules
+git clone --recurse-submodules https://github.com/Ardameon/h323p.git
+cd h323p
+```
+
+Or for existing repository:
+```bash
+git clone https://github.com/Ardameon/h323p.git
+cd h323p
+git submodule update --init --recursive
+```
+
+### Configure with CMake
+
+**Basic build (Stage 1 - no H323Plus):**
+```bash
+mkdir build && cd build
+cmake .. \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DBUILD_CPPUTEST_FROM_SUBMODULE=ON \
+    -DBUILD_CLI11_FROM_SUBMODULE=ON
+```
+
+**Full build (with H323Plus from submodule):**
+```bash
+mkdir build && cd build
+cmake .. \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DBUILD_H323PLUS_FROM_SUBMODULE=ON \
+    -DH323PLUS_DIR=../deps/h323plus \
+    -DBUILD_CPPUTEST_FROM_SUBMODULE=ON \
+    -DBUILD_CLI11_FROM_SUBMODULE=ON \
+    -DBUILD_PUGIXML_FROM_SUBMODULE=ON
+```
+
+> **Note:** Building H323Plus from submodule requires manual build of PTLib and H323Plus libraries first (see "Building H323Plus" section below).
+
+### Build
+
+```bash
+cmake --build . -j$(nproc)
+```
+
+---
+
+## Option 2: Build with System Packages
+
+### Install Optional Dependencies
 
 **For testing (CppUTest):**
 ```bash
@@ -72,7 +139,7 @@ brew install cli11
 sudo apt-get install -y libpugixml-dev
 ```
 
-## Building H323Plus (Optional - for Stage 2+)
+### Building H323Plus (Optional - for Stage 2+)
 
 H323Plus is required for full H.323 functionality (Stage 2+).
 
@@ -92,8 +159,6 @@ cd h323plus
 make debugnoshared
 export OPENH323DIR=$(pwd)
 ```
-
-## Building h323p
 
 ### Clone the Repository
 
@@ -129,7 +194,9 @@ cmake .. -DBUILD_TESTS=ON
 cmake .. -DBUILD_DOCS=ON
 ```
 
-### Build
+---
+
+## Build
 
 ```bash
 cmake --build . -j$(nproc)
@@ -140,7 +207,7 @@ Or:
 make -j$(nproc)
 ```
 
-### Install (Optional)
+## Install (Optional)
 
 ```bash
 sudo make install

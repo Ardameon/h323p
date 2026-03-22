@@ -3,6 +3,15 @@ build/
 cmake-build-*/
 out/
 
+# Dependencies (submodules)
+# Note: deps/ contains git submodules, only track .gitkeep
+deps/ptlib/
+deps/h323plus/
+deps/cpputest/
+deps/cli11/
+deps/pugixml/
+!deps/.gitkeep
+
 # IDE files
 .idea/
 .vscode/

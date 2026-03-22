@@ -17,11 +17,35 @@
 
 ## 🚀 Quick Start
 
-### Build
+### Option 1: Build with Git Submodules (Recommended)
 
 ```bash
+# Clone with submodules
+git clone --recurse-submodules https://github.com/Ardameon/h323p.git
+cd h323p
+
+# Build with dependencies from submodules
 mkdir build && cd build
-cmake .. -DH323PLUS_DIR=/path/to/h323plus
+cmake .. \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DBUILD_CPPUTEST_FROM_SUBMODULE=ON \
+    -DBUILD_CLI11_FROM_SUBMODULE=ON
+make -j$(nproc)
+```
+
+### Option 2: Build with System Packages
+
+```bash
+# Install dependencies (Ubuntu/Debian)
+sudo apt-get install -y build-essential cmake libssl-dev libcpputest-dev
+
+# Clone repository
+git clone https://github.com/Ardameon/h323p.git
+cd h323p
+
+# Build
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j$(nproc)
 ```
 
@@ -102,6 +126,24 @@ make -j$(nproc)
 - CppUTest (testing)
 - CLI11 (CLI parsing)
 - pugixml (XML parsing)
+
+### Using Git Submodules
+
+All dependencies can be automatically downloaded and built using git submodules:
+
+```bash
+git clone --recurse-submodules https://github.com/Ardameon/h323p.git
+cd h323p
+```
+
+This clones:
+- `deps/ptlib` — PTLib library
+- `deps/h323plus` — H323Plus library (Stage 2+)
+- `deps/cpputest` — CppUTest test framework
+- `deps/cli11` — CLI11 command-line parser
+- `deps/pugixml` — pugixml XML parser
+
+See [INSTALL.md](INSTALL.md) for detailed build instructions.
 
 ## 🧪 Testing
 
