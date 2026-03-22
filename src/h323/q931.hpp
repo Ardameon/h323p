@@ -4,6 +4,8 @@
 #include <map>
 #include <mutex>
 #include <functional>
+#include <optional>
+#include <vector>
 
 #include "h323/call_states.hpp"
 #include "h323/h323_errors.hpp"

@@ -1,4 +1,5 @@
 #include "h323/q931_logger.hpp"
+#include "utils/logging.hpp"
 
 // H323Plus headers (will be available when H323Plus is built)
 // #include <h323.h>
@@ -13,13 +14,6 @@ void Q931Logger::logSetupMessage(const H323Connection* /*connection*/,
                                   const char* /*direction*/,
                                   Q931TraceLevel /*level*/) {
     // TODO: Implement Q.931 SETUP message logging
-    // This will log:
-    // - Call Reference Value
-    // - Message Type
-    // - Calling Party Number
-    // - Called Party Number
-    // - Bearer Capability
-    // - Other information elements
 }
 
 void Q931Logger::logCallProceedingMessage(const H323Connection* /*connection*/,
@@ -44,9 +38,6 @@ void Q931Logger::logReleaseCompleteMessage(const H323Connection* /*connection*/,
                                             const char* /*direction*/,
                                             Q931TraceLevel /*level*/) {
     // TODO: Implement Q.931 RELEASE COMPLETE message logging
-    // This will log:
-    // - Call Reference Value
-    // - Cause IE (if present)
 }
 
 void Q931Logger::logCallReferenceValue(const H323Connection* /*connection*/) {

@@ -8,7 +8,7 @@
 #include "h323/call_states.hpp"
 #include "h323/h323_errors.hpp"
 
-// Forward declaration H3223Plus classes
+// Forward declaration H323Plus classes
 class H323EndPoint;
 class H323Connection;
 class H323Listener;
@@ -54,13 +54,13 @@ using H323EventCallback = std::function<void(const H323Event&)>;
 /**
  * H.323 Event Handler
  * 
- * Inherits from H323Listener to receive asynchronous events from H323Plus.
- * All callbacks are thread-safe and can be called from any thread.
+ * Handles asynchronous events from H323Plus.
+ * Note: Actual H323Listener integration requires H323Plus.
  */
-class H323EventHandler : public H323Listener {
+class H323EventHandler {
 public:
     H323EventHandler();
-    ~H323EventHandler() override;
+    ~H323EventHandler();
 
     /**
      * Set event callback
@@ -72,44 +72,42 @@ public:
      */
     void setEndPoint(H323EndPoint* endpoint);
 
-    // H323Listener interface implementation
+    // Event handlers (called by H323Endpoint)
     
     /**
      * Called when a new incoming connection is received
      */
-    bool OnNewIncomingConnection(H323Connection* connection) override;
+    bool onNewIncomingConnection(H323Connection* connection);
 
     /**
      * Called when connection state changes
      */
-    void OnConnectionState(H323Connection* connection,
-                          OpalConnection::CallResponseTypes response) override;
+    void onConnectionState(H323Connection* connection, int response);
 
     /**
      * Called when connection is clearing
      */
-    void OnConnectionClearing(H323Connection* connection,
-                              const std::string& reason) override;
+    void onConnectionClearing(H323Connection* connection, const std::string& reason);
 
     /**
      * Called when call is established
      */
-    void OnCallEstablished(H323Connection* connection) override;
+    void onCallEstablished(H323Connection* connection);
 
     /**
      * Called when call is released
      */
-    void OnCallReleased(H323Connection* connection) override;
+    void onCallReleased(H323Connection* connection);
 
     /**
      * Called when gatekeeper registration succeeds
      */
-    void OnGatekeeperRegistered(bool success) override;
+    void onGatekeeperRegistered(bool success);
 
     /**
      * Called when gatekeeper is discovered
      */
-    void OnGatekeeperDiscovered(bool success, const std::string& gkAddress) override;
+    void onGatekeeperDiscovered(bool success, const std::string& gkAddress);
 
 private:
     /**

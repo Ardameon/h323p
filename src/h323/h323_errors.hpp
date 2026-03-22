@@ -57,6 +57,10 @@ enum class H323Error {
     NO_AVAILABLE_PORTS = 51,
     MAX_CALLS_REACHED = 52,
     
+    // Service errors
+    SERVICE_UNAVAILABLE = 53,
+    PROTOCOL_ERROR = 54,
+    
     // Configuration errors
     INVALID_CONFIGURATION = 60,
     MISSING_PARAMETER = 61,
@@ -185,7 +189,6 @@ inline bool isH323ErrorRecoverable(H323Error error) {
         case H323Error::CALL_TIMEOUT:
         case H323Error::H245_TIMEOUT:
         case H323Error::CONNECTION_TIMEOUT:
-        case H323Error::TEMPORARY_FAILURE:
         case H323Error::NETWORK_UNREACHABLE:
             return true;
         default:

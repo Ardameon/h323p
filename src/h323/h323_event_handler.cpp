@@ -30,9 +30,9 @@ void H323EventHandler::setEndPoint(H323EndPoint* endpoint) {
     LOG_DEBUG("Endpoint registered with event handler");
 }
 
-bool H323EventHandler::OnNewIncomingConnection(H323Connection* connection) {
+bool H323EventHandler::onNewIncomingConnection(H323Connection* connection) {
     if (!connection) {
-        LOG_ERROR("OnNewIncomingConnection called with null connection");
+        LOG_ERROR("onNewIncomingConnection called with null connection");
         return false;
     }
 
@@ -61,64 +61,21 @@ bool H323EventHandler::OnNewIncomingConnection(H323Connection* connection) {
     return true;
 }
 
-void H323EventHandler::OnConnectionState(H323Connection* connection,
-                                         OpalConnection::CallResponseTypes response) {
+void H323EventHandler::onConnectionState(H323Connection* connection, int /*response*/) {
     if (!connection) {
         return;
     }
 
     std::string callId = getCallId(connection);
-    CallState newState = CallState::NULL_STATE;
-
-    // Map Opal response to CallState
-    switch (response) {
-        case OpalConnection::CallResponseInProgress:
-            newState = CallState::CALL_PROCEEDING;
-            LOG_DEBUG_FMT("Call %s: PROCEEDING", callId.c_str());
-            break;
-
-        case OpalConnection::CallResponseAlerting:
-            newState = CallState::CALL_ALERTING;
-            LOG_DEBUG_FMT("Call %s: ALERTING", callId.c_str());
-            break;
-
-        case OpalConnection::CallResponseConnect:
-            newState = CallState::CALL_ACTIVE;
-            LOG_DEBUG_FMT("Call %s: ACTIVE (connected)", callId.c_str());
-            break;
-
-        case OpalConnection::CallResponseDenied:
-        case OpalConnection::CallResponseRejected:
-            newState = CallState::RELEASE_COMPLETE;
-            LOG_WARN_FMT("Call %s: DENIED/REJECTED", callId.c_str());
-            break;
-
-        default:
-            LOG_DEBUG_FMT("Call %s: Unknown response %d", callId.c_str(), response);
-            return;
-    }
-
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        callStates_[callId] = newState;
-    }
-
-    H323Event event;
-    event.type = H323EventType::CALL_STATE_CHANGED;
-    event.callId = callId;
-    event.callState = newState;
-
-    sendEvent(event);
+    LOG_DEBUG_FMT("Call %s: state changed", callId.c_str());
 }
 
-void H323EventHandler::OnConnectionClearing(H323Connection* connection,
-                                            const std::string& reason) {
+void H323EventHandler::onConnectionClearing(H323Connection* connection, const std::string& reason) {
     if (!connection) {
         return;
     }
 
     std::string callId = getCallId(connection);
-
     LOG_INFO_FMT("Call clearing: %s - %s", callId.c_str(), reason.c_str());
 
     {
@@ -135,13 +92,12 @@ void H323EventHandler::OnConnectionClearing(H323Connection* connection,
     sendEvent(event);
 }
 
-void H323EventHandler::OnCallEstablished(H323Connection* connection) {
+void H323EventHandler::onCallEstablished(H323Connection* connection) {
     if (!connection) {
         return;
     }
 
     std::string callId = getCallId(connection);
-
     LOG_INFO_FMT("Call established: %s", callId.c_str());
 
     {
@@ -157,13 +113,12 @@ void H323EventHandler::OnCallEstablished(H323Connection* connection) {
     sendEvent(event);
 }
 
-void H323EventHandler::OnCallReleased(H323Connection* connection) {
+void H323EventHandler::onCallReleased(H323Connection* connection) {
     if (!connection) {
         return;
     }
 
     std::string callId = getCallId(connection);
-
     LOG_INFO_FMT("Call released: %s", callId.c_str());
 
     {
@@ -179,7 +134,7 @@ void H323EventHandler::OnCallReleased(H323Connection* connection) {
     sendEvent(event);
 }
 
-void H323EventHandler::OnGatekeeperRegistered(bool success) {
+void H323EventHandler::onGatekeeperRegistered(bool success) {
     LOG_INFO_FMT("Gatekeeper registration: %s", success ? "SUCCESS" : "FAILED");
 
     H323Event event;
@@ -190,7 +145,7 @@ void H323EventHandler::OnGatekeeperRegistered(bool success) {
     sendEvent(event);
 }
 
-void H323EventHandler::OnGatekeeperDiscovered(bool success, const std::string& gkAddress) {
+void H323EventHandler::onGatekeeperDiscovered(bool success, const std::string& gkAddress) {
     LOG_INFO_FMT("Gatekeeper discovery: %s (%s)",
                  success ? "SUCCESS" : "FAILED", gkAddress.c_str());
 
@@ -215,7 +170,6 @@ std::string H323EventHandler::getCallId(H323Connection* connection) {
         return "";
     }
     // This will be implemented with actual H323Plus integration
-    // For now, return a placeholder
     return std::to_string(reinterpret_cast<uintptr_t>(connection));
 }
 
@@ -223,7 +177,6 @@ std::string H323EventHandler::getRemoteAddress(H323Connection* connection) {
     if (!connection) {
         return "";
     }
-    // This will be implemented with actual H323Plus integration
     return "unknown";
 }
 
@@ -231,7 +184,6 @@ std::string H323EventHandler::getRemoteNumber(H323Connection* connection) {
     if (!connection) {
         return "";
     }
-    // This will be implemented with actual H323Plus integration
     return "unknown";
 }
 

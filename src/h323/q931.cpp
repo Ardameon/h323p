@@ -1,5 +1,6 @@
 #include "h323/q931.hpp"
 #include "utils/logging.hpp"
+#include <optional>
 
 namespace h323p {
 

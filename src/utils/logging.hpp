@@ -42,6 +42,23 @@ inline std::string logLevelToString(LogLevel level) {
     }
 }
 
+// Format string helper (variadic)
+template<typename... Args>
+std::string formatString(const char* fmt, Args... args) {
+    // Simple implementation using snprintf
+    int size = std::snprintf(nullptr, 0, fmt, args...);
+    if (size <= 0) return "";
+    
+    std::string result(size, '\0');
+    std::snprintf(&result[0], size + 1, fmt, args...);
+    return result;
+}
+
+// Overload for std::string format
+inline std::string formatString(const std::string& fmt) {
+    return fmt;
+}
+
 // Log entry structure
 struct LogEntry {
     std::chrono::system_clock::time_point timestamp;
@@ -104,5 +121,15 @@ private:
 #define LOG_INFO(msg) h323p::Logger::instance().info(msg)
 #define LOG_WARN(msg) h323p::Logger::instance().warn(msg)
 #define LOG_ERROR(msg) h323p::Logger::instance().error(msg)
+
+// Format macros (C++20 compatible)
+#define LOG_DEBUG_FMT(fmt, ...) \
+    h323p::Logger::instance().debug(h323p::formatString(fmt, ##__VA_ARGS__))
+#define LOG_INFO_FMT(fmt, ...) \
+    h323p::Logger::instance().info(h323p::formatString(fmt, ##__VA_ARGS__))
+#define LOG_WARN_FMT(fmt, ...) \
+    h323p::Logger::instance().warn(h323p::formatString(fmt, ##__VA_ARGS__))
+#define LOG_ERROR_FMT(fmt, ...) \
+    h323p::Logger::instance().error(h323p::formatString(fmt, ##__VA_ARGS__))
 
 } // namespace h323p

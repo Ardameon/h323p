@@ -125,6 +125,14 @@ set(H323P_SOURCES
     src/utils/logging.cpp
     src/utils/timer.cpp
     src/utils/utils.cpp
+    # Stage 2 H.323 module
+    src/h323/h323_endpoint.cpp
+    src/h323/h323_event_handler.cpp
+    src/h323/h323_errors.cpp
+    src/h323/q931.cpp
+    # src/h323/q931_logger.cpp  # Temporarily disabled - H323Plus dependency
+    src/h323/ras.cpp
+    src/h323/gatekeeper_manager.cpp
 )
 
 set(H323P_HEADERS
@@ -136,6 +144,15 @@ set(H323P_HEADERS
     src/utils/logging.hpp
     src/utils/timer.hpp
     src/utils/utils.hpp
+    # Stage 2 H.323 module
+    src/h323/h323_endpoint.hpp
+    src/h323/h323_event_handler.hpp
+    src/h323/h323_errors.hpp
+    src/h323/q931.hpp
+    src/h323/q931_logger.hpp
+    src/h323/ras.hpp
+    src/h323/gatekeeper_manager.hpp
+    src/h323/call_states.hpp
 )
 
 # ============================================================================
